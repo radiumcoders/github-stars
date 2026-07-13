@@ -42,3 +42,6 @@ next-env.d.ts
 
 # remotion local renders
 .remotion/
+
+# better-auth sqlite database
+sqlite.db

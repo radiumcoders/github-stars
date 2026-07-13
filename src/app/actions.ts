@@ -1,15 +1,22 @@
 "use server";
 
+import { getGithubOAuthToken } from "@/lib/github-access-token";
 import { getGithubStarsInfo, type GithubStarsResult } from "@/lib/github-stars-info";
 import { env } from "@/lib/env";
 import type { GenerateVideoResult } from "@/lib/video-export";
 import { defaultProps, schema } from "@/video/schema";
 import { getRenderProgress, renderMediaOnLambda } from "@remotion/lambda/client";
 
-export async function fetchGithubStars(
-  repository: string,
-  token: string,
-): Promise<GithubStarsResult> {
+export async function fetchGithubStars(repository: string): Promise<GithubStarsResult> {
+  const token = await getGithubOAuthToken();
+  if (!token) {
+    return {
+      ok: false,
+      code: "missing_token",
+      message:
+        "Sign in with GitHub to authorize access before fetching stargazers.",
+    };
+  }
   return getGithubStarsInfo(repository, token);
 }
 

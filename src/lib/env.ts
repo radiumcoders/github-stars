@@ -6,7 +6,10 @@ const envSchema = z.object({
   REMOTION_AWS_REGION: z.string().default("us-east-1"),
   REMOTION_AWS_FUNCTION_NAME: z.string().optional(),
   REMOTION_SERVE_URL: z.string().optional(),
-  GITHUB_ACCESS_TOKEN: z.string().optional(),
+  BETTER_AUTH_SECRET: z.string().optional(),
+  BETTER_AUTH_URL: z.string().default("http://localhost:3000"),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
   NEXT_PUBLIC_BASE_URL: z.string().default("http://localhost:3000"),
   VERCEL: z.string().optional(),
 });

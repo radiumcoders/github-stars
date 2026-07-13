@@ -1,0 +1,21 @@
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
+export async function getGithubOAuthToken(): Promise<string | null> {
+  const requestHeaders = await headers();
+  const session = await auth.api.getSession({ headers: requestHeaders });
+
+  if (!session?.user) {
+    return null;
+  }
+
+  try {
+    const tokens = await auth.api.getAccessToken({
+      body: { providerId: "github" },
+      headers: requestHeaders,
+    });
+    return tokens.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}

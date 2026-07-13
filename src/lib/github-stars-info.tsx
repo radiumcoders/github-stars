@@ -30,7 +30,7 @@ function mapError(err: unknown): GithubStarsResult {
         ok: false,
         code: "forbidden",
         message:
-          "Access denied. Use a token scoped to this repository — fine-grained PAT with read access, or a classic token with repo/public_repo scope.",
+          "Access denied. Your GitHub OAuth authorization may not have access to this repository — try signing in again or use a repo you own or collaborate on.",
       };
     }
     if (status === 404) {
@@ -66,7 +66,7 @@ export async function getGithubStarsInfo(
       ok: false,
       code: "missing_token",
       message:
-        "A GitHub token is required. GitHub restricts stargazer access to repo collaborators — paste a PAT scoped to this repository.",
+        "GitHub authorization is required. Sign in with GitHub to grant access before fetching stargazers.",
     };
   }
 

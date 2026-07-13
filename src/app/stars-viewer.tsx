@@ -28,12 +28,12 @@ export function StarsViewer({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GithubStarsResult | null>(null);
 
-  const handleSubmit = useCallback(async (repo: string, token: string) => {
+  const handleSubmit = useCallback(async (repo: string) => {
     setRepository(repo);
     setLoading(true);
     setResult(null);
     try {
-      const data = await fetchGithubStars(repo, token);
+      const data = await fetchGithubStars(repo);
       setResult(data);
     } finally {
       setLoading(false);
@@ -65,7 +65,7 @@ export function StarsViewer({
             </CardTitle>
             <CardDescription className="text-neutral-500">
               {result.code === "missing_token"
-                ? "Token required"
+                ? "GitHub authorization required"
                 : result.code === "forbidden"
                   ? "Access denied"
                   : "Could not load repository"}
