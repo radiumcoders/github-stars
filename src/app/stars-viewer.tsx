@@ -11,6 +11,13 @@ import {
 } from "@/components/ui/card";
 import type { ExportConfig } from "@/lib/export-config";
 import type { GithubStarsResult } from "@/lib/github-stars-info";
+import {
+  defaultPreset,
+  defaultPrimaryColor,
+  defaultShaderColor,
+  defaultTextColor,
+  type PresetId,
+} from "@/video/presets";
 import { Props } from "@/video/schema";
 import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -41,6 +48,10 @@ export function StarsViewer({
   const [repository, setRepository] = useState(initialRepository);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GithubStarsResult | null>(null);
+  const [preset, setPreset] = useState<PresetId>(defaultPreset);
+  const [primaryColor, setPrimaryColor] = useState(defaultPrimaryColor);
+  const [shaderColor, setShaderColor] = useState(defaultShaderColor);
+  const [textColor, setTextColor] = useState(defaultTextColor);
 
   const handleSubmit = useCallback(async (repo: string) => {
     setRepository(repo);
@@ -101,8 +112,33 @@ export function StarsViewer({
       )}
 
       {!loading && result?.ok === true && (
-        <ResultCard inputProps={result.data as Partial<Props>} exportConfig={exportConfig}>
-          <CompositionPlayer inputProps={result.data} />
+        <ResultCard
+          inputProps={{
+            ...(result.data as Partial<Props>),
+            preset,
+            primaryColor,
+            shaderColor,
+            textColor,
+          }}
+          exportConfig={exportConfig}
+          preset={preset}
+          onPresetChange={setPreset}
+          primaryColor={primaryColor}
+          onPrimaryColorChange={setPrimaryColor}
+          shaderColor={shaderColor}
+          onShaderColorChange={setShaderColor}
+          textColor={textColor}
+          onTextColorChange={setTextColor}
+        >
+          <CompositionPlayer
+            inputProps={{
+              ...result.data,
+              preset,
+              primaryColor,
+              shaderColor,
+              textColor,
+            }}
+          />
         </ResultCard>
       )}
     </div>
