@@ -24,16 +24,16 @@ export function StarParticles({ active }: StarParticlesProps) {
       return;
     }
 
-    const generated = Array.from({ length: 24 }, (_, i) => ({
+    const generated = Array.from({ length: 16 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 6 + 3,
+      size: Math.random() * 3 + 2,
       delay: Math.random() * 0.4,
     }));
     setParticles(generated);
 
-    const timeout = setTimeout(() => setParticles([]), 3000);
+    const timeout = setTimeout(() => setParticles([]), 2500);
     return () => clearTimeout(timeout);
   }, [active]);
 
@@ -44,16 +44,15 @@ export function StarParticles({ active }: StarParticlesProps) {
           <motion.div
             key={p.id}
             initial={{ opacity: 0, scale: 0, y: 0 }}
-            animate={{ opacity: [0, 1, 0], scale: [0, 1.2, 0.4], y: -40 }}
+            animate={{ opacity: [0, 0.6, 0], scale: [0, 1, 0.3], y: -30 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.8, delay: p.delay, ease: "easeOut" }}
-            className="absolute rounded-full bg-violet-400"
+            transition={{ duration: 1.5, delay: p.delay, ease: "easeOut" }}
+            className="absolute rounded-full bg-foreground/40"
             style={{
               left: `${p.x}%`,
               top: `${p.y}%`,
               width: p.size,
               height: p.size,
-              boxShadow: "0 0 8px rgba(139, 92, 246, 0.8)",
             }}
           />
         ))}

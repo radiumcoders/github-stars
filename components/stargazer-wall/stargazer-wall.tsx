@@ -74,17 +74,17 @@ export function StargazerWall({ data, autoPlay = true }: StargazerWallProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
               <a
                 href={`https://github.com/${data.owner}/${data.repo}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition-colors hover:text-violet-300"
+                className="text-foreground transition-colors hover:text-muted-foreground"
               >
                 {data.owner}/{data.repo}
               </a>
             </h2>
-            <Badge variant="outline" className="border-violet-500/30 text-violet-300">
+            <Badge variant="outline" className="font-mono text-xs">
               {data.stargazers.length} on wall
             </Badge>
           </div>
@@ -108,7 +108,7 @@ export function StargazerWall({ data, autoPlay = true }: StargazerWallProps) {
           placeholder="Filter by username…"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="border-white/10 bg-white/5 pl-9 backdrop-blur-sm"
+          className="border-border bg-background pl-9 font-mono text-sm"
           aria-label="Filter stargazers by username"
         />
       </div>
@@ -126,12 +126,12 @@ export function StargazerWall({ data, autoPlay = true }: StargazerWallProps) {
 
       <div
         id="wall-canvas"
-        className="relative overflow-hidden rounded-3xl border border-white/8 bg-gradient-to-br from-zinc-900/80 via-zinc-950/90 to-slate-950/80 p-6 shadow-[0_0_60px_rgba(99,102,241,0.08)] backdrop-blur-2xl sm:p-8"
+        className="relative overflow-hidden rounded-lg border border-border bg-card p-6 sm:p-8"
       >
         <StarParticles active={isComplete && !search} />
 
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-zinc-950/80 to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-zinc-950/60 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-card to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-card to-transparent" />
 
         <LayoutGroup id={`wall-${animationKey}`}>
           <motion.div

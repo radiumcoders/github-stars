@@ -29,7 +29,7 @@ export function WallControls({
 }: WallControlsProps) {
   return (
     <div
-      className="flex flex-col gap-4 rounded-2xl border border-white/8 bg-white/3 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
       role="toolbar"
       aria-label="Wall animation controls"
     >
@@ -52,13 +52,13 @@ export function WallControls({
           <FastForward data-icon="inline-start" />
           Show All
         </Button>
-        <span className="text-sm text-muted-foreground" aria-live="polite">
+        <span className="font-mono text-sm text-muted-foreground" aria-live="polite">
           {visibleCount} / {total}
         </span>
       </div>
 
       <div className="flex min-w-[200px] flex-1 items-center gap-3 sm:max-w-xs">
-        <Label htmlFor="speed-slider" className="shrink-0 text-xs text-muted-foreground">
+        <Label htmlFor="speed-slider" className="shrink-0 font-mono text-xs text-muted-foreground">
           Speed
         </Label>
         <Slider
@@ -74,7 +74,7 @@ export function WallControls({
           aria-label={`Animation speed ${speedMs} milliseconds`}
           className="flex-1"
         />
-        <span className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+        <span className="w-12 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
           {speedMs}ms
         </span>
       </div>
