@@ -1,23 +1,36 @@
 # Vercel + Remotion Lambda setup
 
-## How it works on Vercel
+## How it works
 
 | Feature | Where it runs |
 |---------|----------------|
 | Web app + video preview (Player) | Vercel |
-| Fetch stargazers (user's GitHub token) | Vercel serverless |
+| Auth (Better Auth + Neon) + GitHub OAuth | Vercel |
+| Fetch stargazers (user's OAuth token) | Vercel serverless |
 | MP4 export | **AWS Remotion Lambda** (not Vercel) |
 
 Local FFmpeg rendering does **not** work on Vercel. Export uses Lambda when env vars are set.
 
 ## 1. Deploy the Next.js app
 
-1. Push to GitHub (`radiumcoders/github-stars`)
-2. [Import on Vercel](https://vercel.com/new) → select the repo
-3. Framework: **Next.js** (auto-detected)
-4. Deploy (preview works immediately)
+1. Push to GitHub
+2. [Import on Vercel](https://vercel.com/new)
+3. Framework: **Next.js**
+4. Set environment variables (below), then deploy
 
-## 2. One-time AWS + Remotion Lambda setup (on your machine)
+## 2. Auth env vars
+
+| Variable | Notes |
+|----------|--------|
+| `NEXT_PUBLIC_BASE_URL` | Production URL, e.g. `https://starwall.example.com` |
+| `BETTER_AUTH_URL` | Same as public base URL |
+| `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
+| `DATABASE_URL` | Neon Postgres connection string |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth App; callback `https://…/api/auth/callback/github` |
+
+Run once against Neon: `npm run auth:migrate`
+
+## 3. One-time AWS + Remotion Lambda (on your machine)
 
 Follow [Remotion Lambda setup](https://www.remotion.dev/docs/lambda/setup):
 
@@ -32,13 +45,10 @@ npm run lambda:site     # prints REMOTION_SERVE_URL
 
 Copy both values into Vercel env vars.
 
-## 3. Vercel environment variables
-
-In **Vercel → Project → Settings → Environment Variables**, add:
+## 4. Remotion env vars (Vercel)
 
 | Variable | Value |
 |----------|--------|
-| `NEXT_PUBLIC_BASE_URL` | `https://your-app.vercel.app` |
 | `REMOTION_AWS_ACCESS_KEY_ID` | AWS access key |
 | `REMOTION_AWS_SECRET_ACCESS_KEY` | AWS secret key |
 | `REMOTION_AWS_REGION` | `us-east-1` |
@@ -47,7 +57,7 @@ In **Vercel → Project → Settings → Environment Variables**, add:
 
 Apply to **Production** and **Preview**. Redeploy.
 
-## 4. After code changes to the video
+## 5. After video composition changes
 
 Re-upload the Remotion site when `src/video/` changes:
 
@@ -55,6 +65,6 @@ Re-upload the Remotion site when `src/video/` changes:
 npm run lambda:site
 ```
 
-## 5. User GitHub tokens
+## Local development
 
-Users paste a **fine-grained PAT** (Contents: Read on their repo) in the UI. Tokens stay in the browser session — not stored on the server.
+Without Lambda, MP4 export uses local Remotion CLI + FFmpeg (`npm run remotion-studio` optional).

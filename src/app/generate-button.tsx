@@ -2,11 +2,10 @@
 
 import { generateVideo, getVideoGenerationProgress } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import { delay } from "@/lib/utils";
 import type { ExportConfig } from "@/lib/export-config";
+import { delay } from "@/lib/utils";
 import { Props } from "@/video/schema";
 import { Download, FileVideo, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type State =
@@ -37,6 +36,11 @@ function buildDownloadPath(
   return `/download?${params.toString()}`;
 }
 
+/** Full-page navigation so the browser handles Content-Disposition (SPA router breaks binary downloads). */
+function triggerDownload(path: string) {
+  window.location.assign(path);
+}
+
 export function GenerateButton({
   inputProps,
   exportConfig,
@@ -45,7 +49,6 @@ export function GenerateButton({
   exportConfig: ExportConfig;
 }) {
   const [state, setState] = useState<State>({ type: "initial" });
-  const router = useRouter();
 
   if (exportConfig.mode === "disabled") {
     return (
@@ -57,26 +60,14 @@ export function GenerateButton({
 
   if (inputProps && state.type === "done") {
     return (
-      <form action="/download" method="GET" className="w-full">
-        <input type="hidden" name="user" value={inputProps.user} />
-        <input type="hidden" name="repository" value={inputProps.repository} />
-        <input type="hidden" name="mode" value={state.mode} />
-        {state.mode === "lambda" ? (
-          <>
-            <input type="hidden" name="renderId" value={state.renderId} />
-            <input type="hidden" name="bucketName" value={state.bucketName} />
-          </>
-        ) : (
-          <input type="hidden" name="fileId" value={state.fileId} />
-        )}
-        <Button
-          type="submit"
-          className="w-full font-mono text-xs uppercase tracking-wider"
-        >
-          <Download className="mr-2 size-3.5" />
-          Download video
-        </Button>
-      </form>
+      <Button
+        type="button"
+        className="w-full font-mono text-xs uppercase tracking-wider"
+        onClick={() => triggerDownload(buildDownloadPath(inputProps, state))}
+      >
+        <Download data-icon="inline-start" />
+        Download video
+      </Button>
     );
   }
 
@@ -94,12 +85,13 @@ export function GenerateButton({
             const result = await generateVideo(inputProps);
 
             if (result.mode === "local") {
-              setState({ type: "done", mode: "local", fileId: result.fileId });
-              router.push(buildDownloadPath(inputProps, {
-                type: "done",
-                mode: "local",
+              const doneState = {
+                type: "done" as const,
+                mode: "local" as const,
                 fileId: result.fileId,
-              }));
+              };
+              setState(doneState);
+              triggerDownload(buildDownloadPath(inputProps, doneState));
               return;
             }
 
@@ -109,7 +101,7 @@ export function GenerateButton({
               bucketName: result.bucketName,
             });
 
-            do {
+            for (;;) {
               await delay(5000);
               const progress = await getVideoGenerationProgress(
                 result.renderId,
@@ -123,14 +115,14 @@ export function GenerateButton({
                   bucketName: result.bucketName,
                 };
                 setState(doneState);
-                router.push(buildDownloadPath(inputProps, doneState));
+                triggerDownload(buildDownloadPath(inputProps, doneState));
                 break;
               }
               if (progress.error) {
                 setState({ type: "error", message: "Video render failed." });
                 break;
               }
-            } while (true);
+            }
           } catch (err) {
             const message =
               err instanceof Error
@@ -145,12 +137,12 @@ export function GenerateButton({
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 size-3.5 animate-spin" />
+            <Loader2 data-icon="inline-start" className="animate-spin" />
             Generating video…
           </>
         ) : (
           <>
-            <FileVideo className="mr-2 size-3.5" />
+            <FileVideo data-icon="inline-start" />
             Download video
           </>
         )}

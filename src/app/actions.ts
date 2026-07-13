@@ -1,8 +1,8 @@
 "use server";
 
+import { env } from "@/lib/env";
 import { getGithubOAuthToken } from "@/lib/github-access-token";
 import { getGithubStarsInfo, type GithubStarsResult } from "@/lib/github-stars-info";
-import { env } from "@/lib/env";
 import type { GenerateVideoResult } from "@/lib/video-export";
 import { defaultProps, schema } from "@/video/schema";
 import { getRenderProgress, renderMediaOnLambda } from "@remotion/lambda/client";
@@ -14,7 +14,7 @@ export async function fetchGithubStars(repository: string): Promise<GithubStarsR
       ok: false,
       code: "missing_token",
       message:
-        "Sign in with GitHub to authorize access before fetching stargazers.",
+        "Sign in with GitHub to authorize access before fetching stargazers. If you already signed in, sign out and sign in again so we can store a fresh token.",
     };
   }
   return getGithubStarsInfo(repository, token);
@@ -22,7 +22,9 @@ export async function fetchGithubStars(repository: string): Promise<GithubStarsR
 
 export async function generateVideo(inputProps: unknown): Promise<GenerateVideoResult> {
   const props = schema.parse(
-    typeof inputProps === "object" ? { ...defaultProps, ...inputProps } : {},
+    typeof inputProps === "object" && inputProps !== null
+      ? { ...defaultProps, ...inputProps }
+      : defaultProps,
   );
 
   if (env.hasLambda) {
@@ -60,11 +62,11 @@ export async function getVideoGenerationProgress(renderId: string, bucketName: s
     bucketName,
   });
 
-  if (errors) {
+  if (errors?.length) {
     for (const error of errors) {
-      console.error(error);
+      console.error("[remotion] render error:", error);
     }
   }
 
-  return { done, error: errors.length > 0, outputFile };
+  return { done, error: Boolean(errors?.length), outputFile };
 }

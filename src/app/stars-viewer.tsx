@@ -50,7 +50,7 @@ export function StarsViewer({
 
       {loading && (
         <ResultCard exportConfig={exportConfig}>
-          <div className="flex size-full items-center justify-center gap-2 font-mono text-xs text-neutral-500">
+          <div className="flex size-full items-center justify-center gap-2 font-mono text-xs text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" />
             Fetching stargazers
           </div>
@@ -60,10 +60,10 @@ export function StarsViewer({
       {!loading && result?.ok === false && (
         <ResultCard className="relative" exportConfig={exportConfig}>
           <CardHeader>
-            <CardTitle className="font-mono text-sm uppercase tracking-wider text-neutral-800">
+            <CardTitle className="font-mono text-sm uppercase tracking-wider">
               Error
             </CardTitle>
-            <CardDescription className="text-neutral-500">
+            <CardDescription>
               {result.code === "missing_token"
                 ? "GitHub authorization required"
                 : result.code === "forbidden"
@@ -72,7 +72,7 @@ export function StarsViewer({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-neutral-600">{result.message}</p>
+            <p className="text-sm text-muted-foreground">{result.message}</p>
             {result.code === "not_found" && (
               <Image
                 src="/lost.gif"

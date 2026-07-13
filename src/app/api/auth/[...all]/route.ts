@@ -1,18 +1,18 @@
 import { getAuth } from "@/lib/auth";
 import { toNextJsHandler } from "better-auth/next-js";
 
-const auth = getAuth();
-const handlers = auth ? toNextJsHandler(auth) : null;
-
 function notConfigured() {
   return Response.json(
     {
       error:
-        "Auth is not configured. Add DATABASE_URL (Neon Postgres) and BETTER_AUTH_SECRET.",
+        "Auth is not configured. Add DATABASE_URL (Neon Postgres), BETTER_AUTH_SECRET, GITHUB_CLIENT_ID, and GITHUB_CLIENT_SECRET.",
     },
     { status: 503 },
   );
 }
 
-export const GET = handlers?.GET ?? notConfigured;
-export const POST = handlers?.POST ?? notConfigured;
+const auth = getAuth();
+
+export const { GET, POST } = auth
+  ? toNextJsHandler(auth)
+  : { GET: notConfigured, POST: notConfigured };

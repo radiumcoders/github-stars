@@ -40,7 +40,7 @@ export default function RootLayout({
               target="_blank"
               rel="noreferrer noopener"
             >
-              <ExternalLink className="mr-1.5 size-3.5" />
+              <ExternalLink data-icon="inline-start" />
               Source
             </a>
           </Button>

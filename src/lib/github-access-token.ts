@@ -19,8 +19,10 @@ export async function getGithubOAuthToken(): Promise<string | null> {
       body: { providerId: "github" },
       headers: requestHeaders,
     });
-    return tokens.accessToken ?? null;
-  } catch {
+    const token = tokens.accessToken?.trim();
+    return token || null;
+  } catch (err) {
+    console.error("[auth] Failed to read GitHub access token:", err);
     return null;
   }
 }
