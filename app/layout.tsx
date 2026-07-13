@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Stargazer Wall — Animated GitHub Star History",
   description:
-    "Beautiful animated stargazer avatar wall with star history charts, powered by GitHub Actions and Next.js.",
+    "Animated stargazer avatar wall with star history charts, powered by GitHub Actions and Next.js.",
   openGraph: {
     title: "Stargazer Wall",
-    description: "Watch your GitHub stars come alive with buttery-smooth animations.",
+    description: "Watch your GitHub stars come alive.",
   },
 };
 
@@ -32,7 +32,9 @@ export default function RootLayout({
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-foreground">{children}</body>
+      <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
+        {children}
+      </body>
     </html>
   );
 }
