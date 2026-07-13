@@ -1,7 +1,6 @@
 "use client";
 
 import { fetchGithubStars } from "@/app/actions";
-import { CompositionPlayer } from "@/app/composition-player";
 import { RepositoryForm } from "@/app/repository-form";
 import { ResultCard } from "@/app/result-card";
 import {
@@ -14,8 +13,23 @@ import type { ExportConfig } from "@/lib/export-config";
 import type { GithubStarsResult } from "@/lib/github-stars-info";
 import { Props } from "@/video/schema";
 import { Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useState } from "react";
+
+// Remotion must not evaluate during SSR (version registry + DOM APIs).
+const CompositionPlayer = dynamic(
+  () =>
+    import("@/app/composition-player").then((m) => m.CompositionPlayer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex size-full items-center justify-center font-mono text-xs text-muted-foreground">
+        Loading player…
+      </div>
+    ),
+  },
+);
 
 export function StarsViewer({
   initialRepository,
