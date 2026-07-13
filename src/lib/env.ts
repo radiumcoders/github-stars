@@ -8,12 +8,14 @@ const envSchema = z.object({
   REMOTION_SERVE_URL: z.string().optional(),
   GITHUB_ACCESS_TOKEN: z.string().optional(),
   NEXT_PUBLIC_BASE_URL: z.string().default("http://localhost:3000"),
+  VERCEL: z.string().optional(),
 });
 
 const parsed = envSchema.parse(process.env);
 
 export const env = {
   ...parsed,
+  isVercel: parsed.VERCEL === "1",
   hasLambda: Boolean(
     parsed.REMOTION_AWS_FUNCTION_NAME &&
       parsed.REMOTION_SERVE_URL &&

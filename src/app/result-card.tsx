@@ -1,31 +1,34 @@
-import { GenerateButton } from '@/app/generate-button'
-import { Card } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-import { Props } from '@/video/schema'
-import { ReactNode } from 'react'
+import { GenerateButton } from "@/app/generate-button";
+import { Card } from "@/components/ui/card";
+import type { ExportConfig } from "@/lib/export-config";
+import { cn } from "@/lib/utils";
+import { Props } from "@/video/schema";
+import { ReactNode } from "react";
 
 export function ResultCard({
   children,
   className,
   inputProps,
+  exportConfig,
 }: {
-  children?: ReactNode
-  className?: string
-  inputProps?: Partial<Props>
+  children?: ReactNode;
+  className?: string;
+  inputProps?: Partial<Props>;
+  exportConfig: ExportConfig;
 }) {
   return (
     <>
-      <div className="w-full max-w-[640px] aspect-video dark:p-[0.1rem] dark:bg-gradient-to-b from-slate-300 dark:from-slate-100 to-transparent rounded-[0.6rem]">
+      <div className="aspect-video w-full max-w-[640px] rounded-[0.6rem] dark:bg-gradient-to-b dark:from-slate-100 dark:p-[0.1rem]">
         <Card
           className={cn(
             className,
-            'w-full h-full overflow-hidden bg-white text-black rounded-[0.5rem]',
+            "size-full overflow-hidden rounded-[0.5rem] bg-white text-black",
           )}
         >
           {children}
         </Card>
       </div>
-      <GenerateButton inputProps={inputProps} />
+      {inputProps && <GenerateButton inputProps={inputProps} exportConfig={exportConfig} />}
     </>
-  )
+  );
 }

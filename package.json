@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "remotion-studio": "remotion studio src/video/index.ts",
-    "deploy-composition": "remotion lambda sites create src/video/index.ts --site-name=github-stars"
+    "lambda:policies": "remotion lambda policies validate",
+    "lambda:deploy": "remotion lambda functions deploy --region us-east-1 --memory 2048 --timeout 120",
+    "lambda:site": "remotion lambda sites create src/video/index.ts --site-name=github-stars --region us-east-1",
+    "lambda:setup": "npm run lambda:deploy && npm run lambda:site"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

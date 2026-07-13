@@ -10,13 +10,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { ExportConfig } from "@/lib/export-config";
 import type { GithubStarsResult } from "@/lib/github-stars-info";
 import { Props } from "@/video/schema";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 
-export function StarsViewer({ initialRepository }: { initialRepository: string }) {
+export function StarsViewer({
+  initialRepository,
+  exportConfig,
+}: {
+  initialRepository: string;
+  exportConfig: ExportConfig;
+}) {
   const [repository, setRepository] = useState(initialRepository);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GithubStarsResult | null>(null);
@@ -42,7 +49,7 @@ export function StarsViewer({ initialRepository }: { initialRepository: string }
       />
 
       {loading && (
-        <ResultCard>
+        <ResultCard exportConfig={exportConfig}>
           <div className="flex size-full items-center justify-center gap-2">
             <Loader2 className="size-4 animate-spin" />
             <div>Fetching stargazers…</div>
@@ -51,7 +58,7 @@ export function StarsViewer({ initialRepository }: { initialRepository: string }
       )}
 
       {!loading && result?.ok === false && (
-        <ResultCard className="relative">
+        <ResultCard className="relative" exportConfig={exportConfig}>
           <CardHeader>
             <CardTitle>Error</CardTitle>
             <CardDescription>
@@ -78,7 +85,7 @@ export function StarsViewer({ initialRepository }: { initialRepository: string }
       )}
 
       {!loading && result?.ok === true && (
-        <ResultCard inputProps={result.data as Partial<Props>}>
+        <ResultCard inputProps={result.data as Partial<Props>} exportConfig={exportConfig}>
           <CompositionPlayer inputProps={result.data} />
         </ResultCard>
       )}

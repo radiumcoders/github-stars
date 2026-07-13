@@ -3,6 +3,7 @@
 import { generateVideo, getVideoGenerationProgress } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { delay } from "@/lib/utils";
+import type { ExportConfig } from "@/lib/export-config";
 import { Props } from "@/video/schema";
 import { Download, FileVideo, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -15,8 +16,22 @@ type State =
   | { type: "done"; mode: "local"; fileId: string }
   | { type: "error"; message: string };
 
-export function GenerateButton({ inputProps }: { inputProps?: Partial<Props> }) {
+export function GenerateButton({
+  inputProps,
+  exportConfig,
+}: {
+  inputProps?: Partial<Props>;
+  exportConfig: ExportConfig;
+}) {
   const [state, setState] = useState<State>({ type: "initial" });
+
+  if (exportConfig.mode === "disabled") {
+    return (
+      <p className="max-w-md text-center text-sm text-muted-foreground">
+        {exportConfig.hint}
+      </p>
+    );
+  }
 
   if (inputProps && state.type === "done") {
     const params = new URLSearchParams({
@@ -104,13 +119,23 @@ export function GenerateButton({ inputProps }: { inputProps?: Partial<Props> }) 
           </>
         )}
       </Button>
-      {state.type === "error" && (
-        <p className="max-w-sm text-center text-sm text-destructive">{state.message}</p>
+      {exportConfig.hint && state.type === "initial" && (
+        <p className="max-w-sm text-center text-xs text-muted-foreground">
+          {exportConfig.hint}
+        </p>
       )}
-      {state.type === "pending" && (
+      {state.type === "pending" && exportConfig.mode === "local" && (
         <p className="max-w-sm text-center text-xs text-muted-foreground">
           Rendering locally — first run may take a minute while Remotion bundles.
         </p>
+      )}
+      {state.type === "pending" && exportConfig.mode === "lambda" && (
+        <p className="max-w-sm text-center text-xs text-muted-foreground">
+          Rendering on AWS Lambda — this usually takes 30–90 seconds.
+        </p>
+      )}
+      {state.type === "error" && (
+        <p className="max-w-sm text-center text-sm text-destructive">{state.message}</p>
       )}
     </div>
   );
