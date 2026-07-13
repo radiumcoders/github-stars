@@ -65,10 +65,3 @@ export async function fetchStargazerData(
   return res.json();
 }
 
-export function buildStarHistoryPoints(stargazers: Stargazer[]): { date: string; stars: number }[] {
-  const sorted = sortByStarredAt(stargazers);
-  return sorted.map((s, i) => ({
-    date: s.starred_at,
-    stars: i + 1,
-  }));
-}

@@ -14,19 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate star history chart
-        id: star-chart
-        uses: jal-co/shieldcn@v1
-        with:
-          theme: violet
-          mode: dark
-          output: public/data/star-history.svg
-          commit: "false"
-          area: "true"
-          border: "true"
-          width: "800"
-          height: "320"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,7 +23,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          TOTAL_STARS: ${{ steps.star-chart.outputs.stars }}
         run: node scripts/update-stargazers.mjs
 
       - name: Commit and push

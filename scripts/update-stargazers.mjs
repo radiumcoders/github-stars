@@ -15,7 +15,7 @@ const PER_PAGE = 100;
 
 const token = process.env.GITHUB_TOKEN;
 const repository = process.env.GITHUB_REPOSITORY;
-const totalStars = parseInt(process.env.TOTAL_STARS ?? "0", 10);
+const totalStarsEnv = parseInt(process.env.TOTAL_STARS ?? "0", 10);
 
 if (!token || !repository) {
   console.error("GITHUB_TOKEN and GITHUB_REPOSITORY are required");
@@ -39,6 +39,19 @@ async function fetchStargazersPage(page) {
   }
 
   return res.json();
+}
+
+async function fetchRepoStarCount() {
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.stargazers_count ?? 0;
 }
 
 async function fetchAllStargazers() {
@@ -133,12 +146,6 @@ function generateWallMd(stargazers, total) {
 
 ★ **${total.toLocaleString()}** total stars · Updated ${new Date().toISOString().split("T")[0]}
 
-## Star History
-
-![Star history](./star-history.svg)
-
-## Stargazer Wall
-
 ![Stargazer wall](./stargazers-wall.svg)
 
 <details>
@@ -154,8 +161,11 @@ async function main() {
   mkdirSync(DATA_DIR, { recursive: true });
 
   console.log(`Fetching stargazers for ${owner}/${repo}...`);
-  const stargazers = await fetchAllStargazers();
-  const total = totalStars || stargazers.length;
+  const [stargazers, repoStars] = await Promise.all([
+    fetchAllStargazers(),
+    fetchRepoStarCount(),
+  ]);
+  const total = totalStarsEnv || repoStars || stargazers.length;
 
   const data = {
     owner,

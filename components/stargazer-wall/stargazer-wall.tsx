@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { StarCounter } from "./star-counter";
 import { AvatarCard } from "./avatar-card";
 import { WallControls } from "./wall-controls";
-import { StarHistoryChart } from "./star-history-chart";
 import { StarParticles } from "./star-particles";
 import { ExportButton } from "./export-button";
 
@@ -95,8 +94,6 @@ export function StargazerWall({ data, autoPlay = true }: StargazerWallProps) {
           <ExportButton targetId="wall-canvas" />
         </div>
       </div>
-
-      <StarHistoryChart stargazers={data.stargazers} totalStars={data.total_stars} />
 
       <div className="relative">
         <Search
