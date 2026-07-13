@@ -9,7 +9,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, "..", "data");
+const DATA_DIR = join(__dirname, "..", "public", "data");
 const MAX_AVATARS = 48;
 const PER_PAGE = 100;
 
