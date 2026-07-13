@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,28 +45,27 @@ export function RepoGenerator({ onGenerate, initialRepo = DEFAULT_REPO }: RepoGe
   }, [repoInput, onGenerate]);
 
   return (
-    <Card className="border-white/8 bg-white/3 backdrop-blur-xl">
+    <Card className="border-border bg-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Sparkles className="size-5 text-violet-400" />
-          Generate Star Wall
-        </CardTitle>
+        <CardTitle className="text-base font-medium">Repository</CardTitle>
         <CardDescription>
-          Enter any GitHub repository to animate its stargazer wall.
+          Enter a GitHub repository to load its stargazer wall.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <div className="flex flex-1 flex-col gap-2">
-            <Label htmlFor="repo-input">Repository</Label>
+            <Label htmlFor="repo-input" className="font-mono text-xs text-muted-foreground">
+              owner/repo
+            </Label>
             <Input
               id="repo-input"
-              placeholder="owner/repo"
+              placeholder="vercel/next.js"
               value={repoInput}
               onChange={(e) => setRepoInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
               aria-describedby={error ? "repo-error" : undefined}
-              className="border-white/10 bg-white/5"
+              className="border-border bg-background font-mono"
             />
             {error && (
               <p id="repo-error" className="text-sm text-destructive" role="alert">
@@ -78,20 +77,20 @@ export function RepoGenerator({ onGenerate, initialRepo = DEFAULT_REPO }: RepoGe
             {loading ? (
               <Loader2 data-icon="inline-start" className="animate-spin" />
             ) : (
-              <Sparkles data-icon="inline-start" />
+              <ArrowRight data-icon="inline-start" />
             )}
-            {loading ? "Loading…" : "Generate Animation"}
+            {loading ? "Loading…" : "Generate"}
           </Button>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-1">
           {["vercel/next.js", "facebook/react", "jal-co/shieldcn"].map((repo) => (
             <Button
               key={repo}
               variant="ghost"
               size="xs"
               onClick={() => setRepoInput(repo)}
-              className="text-muted-foreground"
+              className="font-mono text-muted-foreground"
             >
               {repo}
             </Button>
