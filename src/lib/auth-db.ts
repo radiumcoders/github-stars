@@ -5,11 +5,7 @@ type AuthDatabase = Pool;
 let cached: AuthDatabase | null = null;
 
 export function getNeonConnectionString() {
-  return (
-    process.env.POSTGRES_URL?.trim() ||
-    process.env.DATABASE_URL?.trim() ||
-    null
-  );
+  return process.env.DATABASE_URL?.trim() || null;
 }
 
 export function createAuthDatabase() {

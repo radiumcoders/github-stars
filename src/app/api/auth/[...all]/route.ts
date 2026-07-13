@@ -8,7 +8,7 @@ function notConfigured() {
   return Response.json(
     {
       error:
-        "Auth is not configured. Add Neon Postgres (POSTGRES_URL or DATABASE_URL) and BETTER_AUTH_SECRET.",
+        "Auth is not configured. Add DATABASE_URL (Neon Postgres) and BETTER_AUTH_SECRET.",
     },
     { status: 503 },
   );

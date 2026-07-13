@@ -5,7 +5,7 @@ const database = createAuthDatabase();
 
 if (!database) {
   throw new Error(
-    "Set POSTGRES_URL or DATABASE_URL before running auth:migrate.",
+    "Set DATABASE_URL before running auth:migrate.",
   );
 }
 
