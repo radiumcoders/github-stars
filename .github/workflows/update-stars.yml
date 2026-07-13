@@ -1,0 +1,52 @@
+name: Update Stars
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-stars:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate star history chart
+        id: star-chart
+        uses: jal-co/shieldcn@v1
+        with:
+          theme: violet
+          mode: dark
+          output: data/star-history.svg
+          commit: "false"
+          area: "true"
+          border: "true"
+          width: "800"
+          height: "320"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Fetch stargazers and generate assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TOTAL_STARS: ${{ steps.star-chart.outputs.stars }}
+        run: node scripts/update-stargazers.mjs
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update stargazers data [skip ci]"
+            git push
+          fi
