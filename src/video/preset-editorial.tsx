@@ -17,9 +17,16 @@ const { fontFamily } = loadFont('normal', {
   subsets: ['latin'],
 })
 
-const pileAvatarSize = 72
-const pileOverlap = 24
-const maxPileAvatars = 14
+const pileAvatarSize = 68
+const pileOverlap = 22
+const maxPileAvatars = 12
+
+// Shared "calm" entrance: heavily damped spring, fade + rise, no bounce.
+function useReveal(delay: number) {
+  const frame = useCurrentFrame()
+  const { fps } = useVideoConfig()
+  return spring({ frame: frame - delay, fps, config: { damping: 200 } })
+}
 
 export function EditorialPreset({
   user,
@@ -34,22 +41,57 @@ export function EditorialPreset({
   return (
     <AbsoluteFill style={{ fontFamily, color: textColor }}>
       <FluidBackground primaryColor={primaryColor} shaderColor={shaderColor} />
-      <div className="relative flex h-full flex-col justify-center px-28">
-        <BigCount stars={stars} />
-        <FacePile stargazers={stargazers} stars={stars} />
-        <RepositoryLine
+      <div className="relative flex h-full flex-col justify-center px-24 pb-10">
+        <Eyebrow
           user={user}
           userAvatarUrl={userAvatarUrl}
           repository={repository}
         />
+        <BigCount stars={stars} />
+        <Rule />
+        <FacePile stargazers={stargazers} stars={stars} />
       </div>
     </AbsoluteFill>
+  )
+}
+
+function Eyebrow({
+  user,
+  userAvatarUrl,
+  repository,
+}: {
+  user: string
+  userAvatarUrl: string
+  repository: string
+}) {
+  const enter = useReveal(0)
+
+  return (
+    <div
+      className="flex items-center gap-4 text-[34px]"
+      style={{
+        opacity: enter,
+        transform: `translateY(${(1 - enter) * 20}px)`,
+      }}
+    >
+      <Img
+        src={userAvatarUrl}
+        alt={user}
+        className="size-[52px] rounded-full"
+      />
+      <span className="font-medium tracking-wide opacity-60">
+        {user}
+        <span className="mx-[0.35em] opacity-50">/</span>
+        <span className="font-semibold opacity-90">{repository}</span>
+      </span>
+    </div>
   )
 }
 
 function BigCount({ stars }: { stars: number }) {
   const frame = useCurrentFrame()
   const { fps } = useVideoConfig()
+  const enter = useReveal(6)
 
   const starsToDisplay = Math.round(
     interpolate(frame, [0, animationDurationInSeconds * fps], [0, stars], {
@@ -58,27 +100,32 @@ function BigCount({ stars }: { stars: number }) {
     }),
   )
 
-  const enter = spring({ frame, fps, config: { damping: 200 } })
-  const rule = spring({ frame: frame - 8, fps, config: { damping: 200 } })
+  return (
+    <div
+      className="mt-6 flex items-baseline gap-8"
+      style={{
+        opacity: enter,
+        transform: `translateY(${(1 - enter) * 28}px)`,
+      }}
+    >
+      <span className="text-[200px] font-extrabold leading-none tracking-tighter tabular-nums">
+        {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
+      </span>
+      <span className="text-[68px] font-medium leading-none tracking-tight opacity-40">
+        stars
+      </span>
+    </div>
+  )
+}
+
+function Rule() {
+  const enter = useReveal(16)
 
   return (
     <div
-      style={{
-        opacity: enter,
-        transform: `translateY(${(1 - enter) * 30}px)`,
-      }}
-    >
-      <div className="text-[168px] font-extrabold leading-none tracking-tighter tabular-nums">
-        {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
-      </div>
-      <div
-        className="mt-6 h-px w-[560px] origin-left bg-current opacity-30"
-        style={{ transform: `scaleX(${rule})` }}
-      />
-      <div className="mt-5 text-[26px] font-medium uppercase tracking-[0.5em] opacity-60">
-        Stars
-      </div>
-    </div>
+      className="mt-16 h-px w-[640px] origin-left bg-current opacity-25"
+      style={{ transform: `scaleX(${enter})` }}
+    />
   )
 }
 
@@ -95,12 +142,12 @@ function FacePile({
   const remaining = stars - avatars.length
 
   return (
-    <div className="mt-14 flex items-center">
+    <div className="mt-10 flex items-center">
       {avatars.map((avatarUrl, i) => {
         const enter = spring({
-          frame: frame - 25 - i * 4,
+          frame: frame - 24 - i * 3,
           fps,
-          config: { damping: 14 },
+          config: { damping: 200 },
         })
         return (
           <Img
@@ -108,75 +155,32 @@ function FacePile({
             src={avatarUrl}
             width={pileAvatarSize}
             height={pileAvatarSize}
-            className="rounded-full border-[3px] border-white shadow-sm"
+            className="rounded-full border-2 border-white shadow-sm"
             style={{
               marginLeft: i === 0 ? 0 : -pileOverlap,
               opacity: enter,
-              transform: `translateX(${(1 - enter) * -16}px) scale(${enter})`,
+              transform: `translateX(${(1 - enter) * -14}px)`,
               zIndex: avatars.length - i,
             }}
           />
         )
       })}
       {remaining > 0 && (
-        <PileRemainder remaining={remaining} delay={25 + avatars.length * 4} />
+        <Caption remaining={remaining} delay={24 + avatars.length * 3} />
       )}
     </div>
   )
 }
 
-function PileRemainder({
-  remaining,
-  delay,
-}: {
-  remaining: number
-  delay: number
-}) {
-  const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const enter = spring({ frame: frame - delay, fps, config: { damping: 14 } })
+function Caption({ remaining, delay }: { remaining: number; delay: number }) {
+  const enter = useReveal(delay)
 
   return (
     <span
-      className="ml-5 text-[26px]"
+      className="ml-6 text-[30px] font-medium tracking-wide"
       style={{ opacity: enter * 0.5 }}
     >
-      +{remaining.toLocaleString('en-US', { useGrouping: true })} more
+      and {remaining.toLocaleString('en-US', { useGrouping: true })} others
     </span>
-  )
-}
-
-function RepositoryLine({
-  user,
-  userAvatarUrl,
-  repository,
-}: {
-  user: string
-  userAvatarUrl: string
-  repository: string
-}) {
-  const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
-  const enter = spring({ frame: frame - 45, fps, config: { damping: 200 } })
-
-  return (
-    <div
-      className="mt-14 flex items-center gap-4 text-[30px]"
-      style={{
-        opacity: enter * 0.75,
-        transform: `translateY(${(1 - enter) * 16}px)`,
-      }}
-    >
-      <Img
-        src={userAvatarUrl}
-        alt={user}
-        className="w-[1.3em] h-[1.3em] rounded-full"
-      />
-      <span>
-        {user}
-        <span className="mx-[0.3em] opacity-50">/</span>
-        <strong className="font-semibold">{repository}</strong>
-      </span>
-    </div>
   )
 }

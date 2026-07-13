@@ -1,3 +1,4 @@
+import { loadFont } from '@remotion/google-fonts/Inter'
 import {
   AbsoluteFill,
   Easing,
@@ -12,15 +13,20 @@ import { animationDurationInSeconds } from './config'
 import { FluidBackground } from './fluid-background'
 import { Props } from './schema'
 
+const { fontFamily } = loadFont('normal', {
+  weights: ['500', '600', '800'],
+  subsets: ['latin'],
+})
+
 const confettiColors = [
   '#f472b6', // pink
-  '#22d3ee', // cyan
-  '#facc15', // yellow
-  '#a78bfa', // purple
-  '#4ade80', // green
+  '#38bdf8', // sky
+  '#fbbf24', // amber
+  '#a78bfa', // violet
+  '#34d399', // emerald
   '#fb923c', // orange
 ]
-const confettiCount = 90
+const confettiCount = 70
 // Concentric elliptical rings: capacity, radii, and avatar size per ring.
 // Rings fill inside-out; the last ring absorbs any remaining stargazers.
 const orbitRings = [
@@ -40,7 +46,7 @@ export function ConfettiPreset({
   textColor,
 }: Props) {
   return (
-    <AbsoluteFill style={{ color: textColor }}>
+    <AbsoluteFill style={{ color: textColor, fontFamily }}>
       <FluidBackground primaryColor={primaryColor} shaderColor={shaderColor} />
       <Confetti />
       <OrbitingAvatars stargazers={stargazers} />
@@ -61,32 +67,38 @@ function Confetti() {
   return (
     <AbsoluteFill>
       {Array.from({ length: confettiCount }, (_, i) => {
-        const x = random(`x-${i}`) * width
-        const size = 8 + random(`size-${i}`) * 10
-        const fallDuration = durationInFrames * (0.5 + random(`fall-${i}`) * 0.5)
-        const delay = random(`delay-${i}`) * durationInFrames * 0.6
-        const drift = (random(`drift-${i}`) - 0.5) * 200
+        const baseX = random(`x-${i}`) * width
+        const size = 9 + random(`size-${i}`) * 9
+        // Bigger pieces fall faster for a hint of depth.
+        const cycle = durationInFrames * (1.6 - (size - 9) / 9 * 0.5)
+        const phase = random(`phase-${i}`)
+        // Particles are spread through the whole fall cycle, so the air is
+        // already full of confetti on frame one; the wrap happens off-screen.
+        const progress = (frame / cycle + phase) % 1
+        const y = interpolate(progress, [0, 1], [-60, height + 60])
+        const sway =
+          Math.sin(frame * (0.02 + random(`sway-${i}`) * 0.02) + phase * 7) *
+          (20 + random(`amp-${i}`) * 30)
+        const rotate = phase * 360 + frame * (0.8 + random(`spin-${i}`) * 1.6)
+        // Slow tumble: squashing width reads as a piece turning in 3D.
+        const tumble =
+          0.25 + 0.75 * Math.abs(Math.sin(frame * 0.04 + phase * 11))
         const color = confettiColors[i % confettiColors.length]
-        const progress = (frame - delay) / fallDuration
-
-        if (progress < 0) return null
-
-        const y = interpolate(progress, [0, 1], [-40, height + 40])
-        const rotate = random(`rot-${i}`) * 360 + frame * (2 + random(`spin-${i}`) * 6)
-        // Fake 3D tumble by squashing width over time.
-        const squash = Math.sin(frame / (4 + random(`sq-${i}`) * 6) + i)
+        const shape = i % 3
 
         return (
           <div
             key={i}
             className="absolute"
             style={{
-              left: x + drift * progress,
+              left: baseX + sway,
               top: y,
-              width: size,
-              height: size * 0.6,
+              width: shape === 2 ? size * 0.45 : size,
+              height: shape === 1 ? size : size * 0.62,
               backgroundColor: color,
-              transform: `rotate(${rotate}deg) scaleX(${squash})`,
+              borderRadius: shape === 1 ? '50%' : 2,
+              opacity: 0.85,
+              transform: `rotate(${rotate}deg) scaleX(${tumble})`,
             }}
           />
         )
@@ -124,16 +136,17 @@ function OrbitingAvatars({ stargazers }: { stargazers: Props['stargazers'] }) {
       {ringAvatars.flatMap((avatars, ring) => {
         const { rx, ry, size } = orbitRings[ring]
         // Alternate direction per ring, slower on the outside.
-        const rotation = frame * 0.008 * (ring % 2 === 0 ? 1 : -1) / (ring + 1)
+        const rotation = (frame * 0.006 * (ring % 2 === 0 ? 1 : -1)) / (ring + 1)
 
         return avatars.map(({ avatarUrl, index }, i) => {
           const angle =
             (i / avatars.length) * Math.PI * 2 - Math.PI / 2 + rotation
-          // One-by-one entrance: each avatar pops in place on its ring.
+          // One-by-one entrance: each avatar pops in place on its ring,
+          // starting after the count has appeared.
           const enter = spring({
-            frame: frame - index * 3,
+            frame: frame - 12 - index * 2,
             fps,
-            config: { damping: 11 },
+            config: { damping: 12 },
           })
           const x = centerX + Math.cos(angle) * rx
           const y = centerY + Math.sin(angle) * ry
@@ -144,7 +157,7 @@ function OrbitingAvatars({ stargazers }: { stargazers: Props['stargazers'] }) {
               src={avatarUrl}
               width={size}
               height={size}
-              className="absolute rounded-full shadow-lg border-4 border-white"
+              className="absolute rounded-full border-[3px] border-white shadow-md"
               style={{
                 left: x - size / 2,
                 top: y - size / 2,
@@ -170,14 +183,14 @@ function CenterCount({ stars }: { stars: number }) {
     }),
   )
 
-  const enter = spring({ frame, fps, config: { damping: 12 } })
-  // Pop when the counter lands on the final number.
+  const enter = spring({ frame, fps, config: { damping: 14 } })
+  // Gentle pop when the counter lands on the final number.
   const pop = spring({
     frame: frame - landFrame,
     fps,
-    config: { damping: 7, stiffness: 180 },
+    config: { damping: 9, stiffness: 160 },
   })
-  const scale = frame < landFrame ? enter : 1 + 0.18 * (1 - pop)
+  const scale = frame < landFrame ? enter : 1 + 0.1 * (1 - pop)
 
   return (
     <AbsoluteFill className="items-center justify-center">
@@ -185,14 +198,36 @@ function CenterCount({ stars }: { stars: number }) {
         className="flex flex-col items-center -mt-16"
         style={{ transform: `scale(${scale})` }}
       >
-        <div className="text-[150px] leading-none font-extrabold tabular-nums drop-shadow-sm">
+        <div className="text-[150px] leading-none font-extrabold tracking-tight tabular-nums">
           {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
         </div>
-        <div className="text-[40px] font-bold uppercase tracking-[0.3em] text-amber-500">
-          ⭐ stars ⭐
+        <div className="mt-4 flex items-center gap-3">
+          <StarIcon size={30} />
+          <span className="text-[28px] font-semibold uppercase tracking-[0.35em] opacity-60">
+            Stars
+          </span>
+          <StarIcon size={30} />
         </div>
       </div>
     </AbsoluteFill>
+  )
+}
+
+function StarIcon({ size }: { size: number }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="#fbbf24"
+      stroke="#f59e0b"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
   )
 }
 
@@ -207,27 +242,27 @@ function RepositoryInformation({
 }) {
   const frame = useCurrentFrame()
   const { fps } = useVideoConfig()
-  const enter = spring({ frame: frame - 10, fps, config: { damping: 14 } })
+  const enter = spring({ frame: frame - 8, fps, config: { damping: 200 } })
 
   return (
     <div
-      className="absolute bottom-0 inset-x-0 flex justify-center pb-12"
+      className="absolute bottom-0 inset-x-0 flex justify-center pb-10"
       style={{
         opacity: enter,
-        transform: `translateY(${(1 - enter) * 40}px)`,
+        transform: `translateY(${(1 - enter) * 30}px)`,
       }}
     >
       {/* Pill is always a white box, so it keeps its own dark text. */}
-      <div className="flex items-center gap-4 rounded-full bg-white border border-gray-200 shadow-xl px-8 py-3 text-[44px] text-gray-800">
+      <div className="flex items-center gap-3 rounded-full bg-white border border-gray-100 shadow-lg px-7 py-3 text-[34px] text-gray-800">
         <Img
           src={userAvatarUrl}
           alt={user}
-          className="rounded-full w-[1.4em] h-[1.4em]"
+          className="rounded-full w-[1.3em] h-[1.3em]"
         />
         <span>
           {user}
-          <span className="opacity-40 mx-[0.2em]">/</span>
-          <strong>{repository}</strong>
+          <span className="mx-[0.2em] opacity-40">/</span>
+          <strong className="font-bold">{repository}</strong>
         </span>
       </div>
     </div>

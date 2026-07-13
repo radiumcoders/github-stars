@@ -15,6 +15,8 @@ export const presets: { id: PresetId; label: string }[] = [
 ]
 
 // Background colors: primary is the base, shader is the fluid moving tint.
+// Both default to white so a freshly generated video starts on a clean
+// plain background until the user picks colors.
 export const defaultPrimaryColor = '#ffffff'
-export const defaultShaderColor = '#c7d2fe'
+export const defaultShaderColor = '#ffffff'
 export const defaultTextColor = '#111827'
