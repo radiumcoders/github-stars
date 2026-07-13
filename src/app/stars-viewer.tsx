@@ -16,6 +16,7 @@ import {
   defaultPrimaryColor,
   defaultShaderColor,
   defaultTextColor,
+  presetColors,
   type PresetId,
 } from "@/video/presets";
 import { Props } from "@/video/schema";
@@ -52,6 +53,16 @@ export function StarsViewer({
   const [primaryColor, setPrimaryColor] = useState(defaultPrimaryColor);
   const [shaderColor, setShaderColor] = useState(defaultShaderColor);
   const [textColor, setTextColor] = useState(defaultTextColor);
+
+  // Switching preset applies its designed palette; the pickers stay live
+  // for overrides afterwards.
+  const handlePresetChange = useCallback((next: PresetId) => {
+    setPreset(next);
+    const colors = presetColors(next);
+    setPrimaryColor(colors.primary);
+    setShaderColor(colors.shader);
+    setTextColor(colors.text);
+  }, []);
 
   const handleSubmit = useCallback(async (repo: string) => {
     setRepository(repo);
@@ -122,7 +133,7 @@ export function StarsViewer({
           }}
           exportConfig={exportConfig}
           preset={preset}
-          onPresetChange={setPreset}
+          onPresetChange={handlePresetChange}
           primaryColor={primaryColor}
           onPrimaryColorChange={setPrimaryColor}
           shaderColor={shaderColor}
