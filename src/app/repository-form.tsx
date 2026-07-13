@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Loader2, LogOut } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 /** Brand mark (lucide no longer ships GitHub icons). */
@@ -22,6 +23,14 @@ function GitHubMark({ className }: { className?: string }) {
   );
 }
 
+function homeCallbackURL() {
+  // Relative path — always passes Better Auth trusted-origin checks.
+  if (typeof window === "undefined") return "/";
+  const path = window.location.pathname || "/";
+  const search = window.location.search || "";
+  return `${path}${search}` || "/";
+}
+
 export function RepositoryForm({
   initialRepository,
   onSubmit,
@@ -31,11 +40,71 @@ export function RepositoryForm({
   onSubmit: (repository: string) => void;
   loading?: boolean;
 }) {
-  const { data: session, isPending } = authClient.useSession();
+  const router = useRouter();
+  const { data: session, isPending, refetch } = authClient.useSession();
   const [repository, setRepository] = useState(initialRepository);
   const [signingIn, setSigningIn] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const isAuthenticated = Boolean(session?.user);
+
+  async function handleSignOut() {
+    setAuthError(null);
+    setSigningOut(true);
+    try {
+      const { error } = await authClient.signOut({
+        fetchOptions: {
+          // Ensure cookies are cleared on this response before we navigate.
+          credentials: "include",
+        },
+      });
+      if (error) {
+        setAuthError(error.message || "Sign out failed.");
+        setSigningOut(false);
+        return;
+      }
+      // Hard navigation so any leftover auth cookies / client cache are gone.
+      window.location.assign("/");
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Sign out failed.");
+      setSigningOut(false);
+    }
+  }
+
+  async function handleSignIn() {
+    setAuthError(null);
+    setSigningIn(true);
+    try {
+      const { data, error } = await authClient.signIn.social({
+        provider: "github",
+        callbackURL: homeCallbackURL(),
+        errorCallbackURL: homeCallbackURL(),
+        // Client redirect plugin also handles `data.url`; keep this for clarity.
+        disableRedirect: false,
+      });
+
+      if (error) {
+        setAuthError(error.message || "Could not start GitHub sign-in.");
+        setSigningIn(false);
+        return;
+      }
+
+      // If the redirect plugin didn't navigate (SSR/edge cases), do it ourselves.
+      if (data?.url && data.redirect !== false) {
+        window.location.assign(data.url);
+        return;
+      }
+
+      // Already signed in / no redirect path — refresh UI.
+      await refetch();
+      router.refresh();
+      setSigningIn(false);
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Sign-in failed.");
+      setSigningIn(false);
+    }
+  }
 
   return (
     <form
@@ -54,7 +123,9 @@ export function RepositoryForm({
         <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
           Configuration
         </p>
-        <h2 className="mt-1 text-lg font-medium tracking-tight">Generate star video</h2>
+        <h2 className="mt-1 text-lg font-medium tracking-tight">
+          Generate star video
+        </h2>
       </div>
 
       <div className="flex flex-col gap-5 p-5">
@@ -94,37 +165,35 @@ export function RepositoryForm({
                 type="button"
                 variant="ghost"
                 size="sm"
+                disabled={signingOut}
                 className="shrink-0 font-mono text-[10px] uppercase"
-                onClick={() => authClient.signOut()}
+                onClick={handleSignOut}
               >
-                <LogOut data-icon="inline-start" />
+                {signingOut ? (
+                  <Loader2 data-icon="inline-start" className="animate-spin" />
+                ) : (
+                  <LogOut data-icon="inline-start" />
+                )}
                 Sign out
               </Button>
             </div>
           ) : (
             <>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Sign in with GitHub so we can use your OAuth authorization to fetch
-                stargazers for repositories you can access.
+                Sign in with GitHub so we can use your OAuth authorization to
+                fetch stargazers for repositories you can access.
               </p>
               <Button
                 type="button"
                 variant="outline"
                 disabled={signingIn}
                 className="w-full font-mono text-xs uppercase tracking-wider"
-                onClick={async () => {
-                  setSigningIn(true);
-                  await authClient.signIn.social({
-                    provider: "github",
-                    callbackURL: window.location.href,
-                  });
-                  setSigningIn(false);
-                }}
+                onClick={handleSignIn}
               >
                 {signingIn ? (
                   <>
                     <Loader2 data-icon="inline-start" className="animate-spin" />
-                    Redirecting
+                    Redirecting to GitHub…
                   </>
                 ) : (
                   <>
@@ -134,6 +203,10 @@ export function RepositoryForm({
                 )}
               </Button>
             </>
+          )}
+
+          {authError && (
+            <p className="font-mono text-[11px] text-destructive">{authError}</p>
           )}
         </div>
 

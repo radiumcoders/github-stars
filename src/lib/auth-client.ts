@@ -1,8 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL:
-    typeof window !== "undefined"
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_BASE_URL || process.env.BETTER_AUTH_URL,
+  // Same-origin relative base — avoids localhost vs production baseURL mismatches.
+  basePath: "/api/auth",
 });
