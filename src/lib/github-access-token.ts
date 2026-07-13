@@ -1,7 +1,12 @@
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 export async function getGithubOAuthToken(): Promise<string | null> {
+  const auth = getAuth();
+  if (!auth) {
+    return null;
+  }
+
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
 

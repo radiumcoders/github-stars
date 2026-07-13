@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@remotion/lambda",
     "@remotion/renderer",
-    "better-sqlite3",
+    "@neondatabase/serverless",
   ],
   images: {
     remotePatterns: [
