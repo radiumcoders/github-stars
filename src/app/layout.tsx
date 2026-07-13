@@ -27,10 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
       <body className="flex min-h-dvh flex-col bg-background font-sans">
-        <div className="vercel-grid pointer-events-none fixed inset-0" aria-hidden />
-        <div className="vercel-glow pointer-events-none fixed inset-x-0 top-0 h-[480px]" aria-hidden />
-
-        <header className="relative z-10 flex h-14 items-center justify-between border-b border-border px-4 sm:px-6">
+        <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex size-6 items-center justify-center border border-border bg-foreground">
               <span className="font-mono text-[10px] font-medium text-background">★</span>
@@ -49,9 +46,9 @@ export default function RootLayout({
           </Button>
         </header>
 
-        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
+        <div className="flex flex-1 flex-col">{children}</div>
 
-        <footer className="relative z-10 border-t border-border px-4 py-6 text-center font-mono text-[11px] text-muted-foreground">
+        <footer className="border-t border-border px-4 py-6 text-center font-mono text-[11px] text-muted-foreground">
           Not endorsed or affiliated with GitHub.
         </footer>
       </body>

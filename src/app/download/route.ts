@@ -35,24 +35,39 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Remotion Lambda not configured" }, { status: 503 });
   }
 
-  const renderId = String(searchParams.get("renderId"));
-  const bucketName = String(searchParams.get("bucketName"));
+  const renderId = searchParams.get("renderId");
+  const bucketName = searchParams.get("bucketName");
 
-  const { outputFile } = await getRenderProgress({
-    region: env.REMOTION_AWS_REGION as "us-east-1",
-    functionName: env.REMOTION_AWS_FUNCTION_NAME!,
-    renderId,
-    bucketName,
-  });
+  if (!renderId || !bucketName) {
+    return NextResponse.json({ error: "Missing renderId or bucketName" }, { status: 400 });
+  }
 
-  if (!outputFile) throw new Error("Video is not ready for download");
+  try {
+    const { outputFile } = await getRenderProgress({
+      region: env.REMOTION_AWS_REGION as "us-east-1",
+      functionName: env.REMOTION_AWS_FUNCTION_NAME!,
+      renderId,
+      bucketName,
+    });
 
-  const response = await fetch(outputFile);
+    if (!outputFile) {
+      return NextResponse.json({ error: "Video is not ready for download" }, { status: 404 });
+    }
 
-  return new NextResponse(response.body, {
-    headers: {
-      ...response.headers,
-      "content-disposition": `attachment; filename="${filename}"`,
-    },
-  });
+    const response = await fetch(outputFile);
+
+    if (!response.ok) {
+      return NextResponse.json({ error: "Failed to fetch rendered video" }, { status: 502 });
+    }
+
+    return new NextResponse(response.body, {
+      headers: {
+        ...response.headers,
+        "content-disposition": `attachment; filename="${filename}"`,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Download failed" }, { status: 500 });
+  }
 }

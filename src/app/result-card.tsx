@@ -29,7 +29,7 @@ export function ResultCard({
             </span>
           )}
         </div>
-        <div className="border border-border bg-background p-[1px]">
+        <div className="border border-border bg-background p-px">
           <Card
             className={cn(
               className,
@@ -40,7 +40,9 @@ export function ResultCard({
           </Card>
         </div>
       </div>
-      {inputProps && <GenerateButton inputProps={inputProps} exportConfig={exportConfig} />}
+      {inputProps && (
+        <GenerateButton inputProps={inputProps} exportConfig={exportConfig} />
+      )}
     </div>
   );
 }
