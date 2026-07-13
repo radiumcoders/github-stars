@@ -1,4 +1,4 @@
-import { getLocalRenderOutputPath } from "@/lib/render-video-local";
+import { getLocalRenderOutputPath } from "@/lib/local-render-paths";
 import { env } from "@/lib/env";
 import { getRenderProgress } from "@remotion/lambda/client";
 import fs from "fs/promises";

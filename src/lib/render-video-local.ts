@@ -1,51 +1,63 @@
 import type { Props } from "@/video/schema";
-import { bundle } from "@remotion/bundler";
-import { renderMedia, selectComposition } from "@remotion/renderer";
-import { enableTailwind } from "@remotion/tailwind";
+import {
+  getLocalRenderOutputPath,
+  getLocalRenderPropsPath,
+} from "@/lib/local-render-paths";
 import { randomUUID } from "crypto";
+import { execFile } from "child_process";
 import fs from "fs/promises";
 import path from "path";
+import { promisify } from "util";
+
+const execFileAsync = promisify(execFile);
 
 const COMPOSITION_ID = "GitHubStars";
+const ENTRY_POINT = path.join("src", "video", "index.ts");
 
-let cachedBundleUrl: string | null = null;
-
-async function getBundleUrl(): Promise<string> {
-  if (!cachedBundleUrl) {
-    cachedBundleUrl = await bundle({
-      entryPoint: path.join(process.cwd(), "src", "video", "index.ts"),
-      webpackOverride: enableTailwind,
-    });
-  }
-  return cachedBundleUrl;
-}
-
-export function getLocalRenderOutputPath(fileId: string): string {
-  return path.join(process.cwd(), ".remotion", "out", `${fileId}.mp4`);
-}
+export { getLocalRenderOutputPath } from "@/lib/local-render-paths";
 
 export async function renderVideoLocal(inputProps: Props): Promise<string> {
-  const serveUrl = await getBundleUrl();
-
-  const composition = await selectComposition({
-    serveUrl,
-    id: COMPOSITION_ID,
-    inputProps,
-  });
-
   const outDir = path.join(process.cwd(), ".remotion", "out");
   await fs.mkdir(outDir, { recursive: true });
 
   const fileId = randomUUID();
   const outputPath = getLocalRenderOutputPath(fileId);
+  const propsPath = getLocalRenderPropsPath(fileId);
 
-  await renderMedia({
-    composition,
-    serveUrl,
-    codec: "h264",
-    outputLocation: outputPath,
-    inputProps,
-  });
+  await fs.writeFile(propsPath, JSON.stringify(inputProps), "utf8");
+
+  const npx = process.platform === "win32" ? "npx.cmd" : "npx";
+
+  try {
+    await execFileAsync(
+      npx,
+      [
+        "remotion",
+        "render",
+        ENTRY_POINT,
+        COMPOSITION_ID,
+        outputPath,
+        `--props=${propsPath}`,
+      ],
+      {
+        cwd: process.cwd(),
+        maxBuffer: 10 * 1024 * 1024,
+        env: process.env,
+      },
+    );
+  } catch (err) {
+    const stderr =
+      err && typeof err === "object" && "stderr" in err
+        ? String((err as { stderr: string }).stderr)
+        : "";
+    const message =
+      stderr.includes("ffmpeg") || stderr.includes("FFmpeg")
+        ? "FFmpeg is required for local export. Install it and add to PATH."
+        : stderr.trim() || (err instanceof Error ? err.message : "Local render failed.");
+    throw new Error(message);
+  } finally {
+    await fs.unlink(propsPath).catch(() => undefined);
+  }
 
   return fileId;
 }
