@@ -16,7 +16,7 @@ function createOctokit(token: string) {
   return new Octokit({
     auth: token,
     request: {
-      fetch: (input, init) =>
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
         fetch(input, { ...init, next: { revalidate: 0 } }),
     },
   });

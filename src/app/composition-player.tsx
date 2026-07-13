@@ -9,7 +9,7 @@ import {
 import { Props, defaultProps } from '@/video/schema'
 import useSize from '@react-hook/size'
 import { Player } from '@remotion/player'
-import { useRef } from 'react'
+import { useRef, type RefObject } from 'react'
 
 export function CompositionPlayer({
   inputProps,
@@ -17,7 +17,7 @@ export function CompositionPlayer({
   inputProps: Partial<Props>
 }) {
   const divRef = useRef<HTMLDivElement>(null)
-  const [divWidth, divHeight] = useSize(divRef)
+  const [divWidth, divHeight] = useSize(divRef as RefObject<HTMLElement>)
 
   return (
     <div className="w-full h-full" ref={divRef}>

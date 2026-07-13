@@ -2,14 +2,9 @@
 
 import { getGithubStarsInfo, type GithubStarsResult } from "@/lib/github-stars-info";
 import { env } from "@/lib/env";
+import type { GenerateVideoResult } from "@/lib/video-export";
 import { defaultProps, schema } from "@/video/schema";
 import { getRenderProgress, renderMediaOnLambda } from "@remotion/lambda/client";
-
-export const maxDuration = 60;
-
-export type GenerateVideoResult =
-  | { mode: "lambda"; renderId: string; bucketName: string }
-  | { mode: "local"; fileId: string };
 
 export async function fetchGithubStars(
   repository: string,
