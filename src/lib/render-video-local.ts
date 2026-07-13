@@ -14,6 +14,10 @@ const execFileAsync = promisify(execFile);
 const COMPOSITION_ID = "GitHubStars";
 const ENTRY_POINT = path.join("src", "video", "index.ts");
 
+function getRemotionCliPath(): string {
+  return path.join(process.cwd(), "node_modules", "@remotion", "cli", "remotion-cli.js");
+}
+
 export { getLocalRenderOutputPath } from "@/lib/local-render-paths";
 
 export async function renderVideoLocal(inputProps: Props): Promise<string> {
@@ -26,13 +30,11 @@ export async function renderVideoLocal(inputProps: Props): Promise<string> {
 
   await fs.writeFile(propsPath, JSON.stringify(inputProps), "utf8");
 
-  const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-
   try {
     await execFileAsync(
-      npx,
+      process.execPath,
       [
-        "remotion",
+        getRemotionCliPath(),
         "render",
         ENTRY_POINT,
         COMPOSITION_ID,
@@ -41,7 +43,7 @@ export async function renderVideoLocal(inputProps: Props): Promise<string> {
       ],
       {
         cwd: process.cwd(),
-        maxBuffer: 10 * 1024 * 1024,
+        maxBuffer: 20 * 1024 * 1024,
         env: process.env,
       },
     );
@@ -50,10 +52,15 @@ export async function renderVideoLocal(inputProps: Props): Promise<string> {
       err && typeof err === "object" && "stderr" in err
         ? String((err as { stderr: string }).stderr)
         : "";
+    const stdout =
+      err && typeof err === "object" && "stdout" in err
+        ? String((err as { stdout: string }).stdout)
+        : "";
+    const output = `${stderr}\n${stdout}`.trim();
     const message =
-      stderr.includes("ffmpeg") || stderr.includes("FFmpeg")
+      output.includes("ffmpeg") || output.includes("FFmpeg")
         ? "FFmpeg is required for local export. Install it and add to PATH."
-        : stderr.trim() || (err instanceof Error ? err.message : "Local render failed.");
+        : output || (err instanceof Error ? err.message : "Local render failed.");
     throw new Error(message);
   } finally {
     await fs.unlink(propsPath).catch(() => undefined);
