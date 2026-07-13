@@ -1,32 +1,14 @@
-import { env } from "@/lib/env";
-
-export type ExportMode = "lambda" | "local" | "disabled";
+export type ExportMode = "browser";
 
 export interface ExportConfig {
   mode: ExportMode;
   hint: string | null;
 }
 
+/** MP4 export always runs in the user's browser — no AWS / FFmpeg server. */
 export function getExportConfig(): ExportConfig {
-  if (env.hasLambda) {
-    return {
-      mode: "lambda",
-      hint: env.isVercel
-        ? "MP4 export runs on Remotion Lambda (AWS)."
-        : null,
-    };
-  }
-
-  if (env.isVercel) {
-    return {
-      mode: "disabled",
-      hint:
-        "MP4 export on Vercel requires Remotion Lambda. Add REMOTION_AWS_* and REMOTION_SERVE_URL in Vercel → Settings → Environment Variables (see .env.example).",
-    };
-  }
-
   return {
-    mode: "local",
-    hint: "Rendering locally — requires FFmpeg installed.",
+    mode: "browser",
+    hint: "Renders on your device — keep this tab open until the download starts.",
   };
 }

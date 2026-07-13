@@ -1,44 +1,25 @@
 "use client";
 
-import { generateVideo, getVideoGenerationProgress } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import type { ExportConfig } from "@/lib/export-config";
-import { delay } from "@/lib/utils";
+import {
+  downloadBlob,
+  renderVideoInBrowser,
+} from "@/lib/render-video-browser";
 import { Props } from "@/video/schema";
 import { Download, FileVideo, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type State =
   | { type: "initial" }
-  | { type: "pending" }
-  | { type: "started"; renderId: string; bucketName: string }
-  | { type: "done"; mode: "lambda"; renderId: string; bucketName: string }
-  | { type: "done"; mode: "local"; fileId: string }
+  | { type: "pending"; progress: number }
+  | { type: "done"; blob: Blob }
   | { type: "error"; message: string };
 
-function buildDownloadPath(
-  inputProps: Partial<Props>,
-  state: Extract<State, { type: "done" }>,
-): string {
-  const params = new URLSearchParams({
-    user: inputProps.user ?? "user",
-    repository: inputProps.repository ?? "repo",
-    mode: state.mode,
-  });
-
-  if (state.mode === "lambda") {
-    params.set("renderId", state.renderId);
-    params.set("bucketName", state.bucketName);
-  } else {
-    params.set("fileId", state.fileId);
-  }
-
-  return `/download?${params.toString()}`;
-}
-
-/** Full-page navigation so the browser handles Content-Disposition (SPA router breaks binary downloads). */
-function triggerDownload(path: string) {
-  window.location.assign(path);
+function safeFilename(user: string, repository: string) {
+  const clean = (value: string) =>
+    value.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 64) || "repo";
+  return `${clean(user)}-${clean(repository)}.mp4`;
 }
 
 export function GenerateButton({
@@ -49,87 +30,67 @@ export function GenerateButton({
   exportConfig: ExportConfig;
 }) {
   const [state, setState] = useState<State>({ type: "initial" });
+  const abortRef = useRef<AbortController | null>(null);
 
-  if (exportConfig.mode === "disabled") {
-    return (
-      <p className="text-center font-mono text-[11px] leading-relaxed text-muted-foreground">
-        {exportConfig.hint}
-      </p>
-    );
-  }
+  const filename = safeFilename(
+    inputProps?.user ?? "user",
+    inputProps?.repository ?? "repo",
+  );
 
   if (inputProps && state.type === "done") {
     return (
-      <Button
-        type="button"
-        className="w-full font-mono text-xs uppercase tracking-wider"
-        onClick={() => triggerDownload(buildDownloadPath(inputProps, state))}
-      >
-        <Download data-icon="inline-start" />
-        Download video
-      </Button>
+      <div className="flex w-full flex-col gap-2">
+        <Button
+          type="button"
+          className="w-full font-mono text-xs uppercase tracking-wider"
+          onClick={() => downloadBlob(state.blob, filename)}
+        >
+          <Download data-icon="inline-start" />
+          Download video
+        </Button>
+        <p className="text-center font-mono text-[10px] text-muted-foreground">
+          Rendered on your device. Re-download anytime without re-rendering.
+        </p>
+      </div>
     );
   }
 
-  const isLoading = state.type === "pending" || state.type === "started";
+  const isLoading = state.type === "pending";
+  const progressPct =
+    state.type === "pending" ? Math.round(state.progress * 100) : 0;
 
   return (
     <div className="flex w-full flex-col gap-2">
       <Button
         className="w-full font-mono text-xs uppercase tracking-wider"
         onClick={async () => {
+          if (!inputProps) return;
+
+          abortRef.current?.abort();
+          const controller = new AbortController();
+          abortRef.current = controller;
+
           try {
-            if (!inputProps) return;
+            setState({ type: "pending", progress: 0 });
 
-            setState({ type: "pending" });
-            const result = await generateVideo(inputProps);
-
-            if (result.mode === "local") {
-              const doneState = {
-                type: "done" as const,
-                mode: "local" as const,
-                fileId: result.fileId,
-              };
-              setState(doneState);
-              triggerDownload(buildDownloadPath(inputProps, doneState));
-              return;
-            }
-
-            setState({
-              type: "started",
-              renderId: result.renderId,
-              bucketName: result.bucketName,
+            const blob = await renderVideoInBrowser(inputProps, {
+              signal: controller.signal,
+              onProgress: ({ progress }) => {
+                setState({ type: "pending", progress });
+              },
             });
 
-            for (;;) {
-              await delay(5000);
-              const progress = await getVideoGenerationProgress(
-                result.renderId,
-                result.bucketName,
-              );
-              if (progress.done) {
-                const doneState = {
-                  type: "done" as const,
-                  mode: "lambda" as const,
-                  renderId: result.renderId,
-                  bucketName: result.bucketName,
-                };
-                setState(doneState);
-                triggerDownload(buildDownloadPath(inputProps, doneState));
-                break;
-              }
-              if (progress.error) {
-                setState({ type: "error", message: "Video render failed." });
-                break;
-              }
-            }
+            setState({ type: "done", blob });
+            downloadBlob(blob, filename);
           } catch (err) {
+            if (controller.signal.aborted) {
+              setState({ type: "initial" });
+              return;
+            }
             const message =
               err instanceof Error
-                ? err.message.includes("ffmpeg") || err.message.includes("FFmpeg")
-                  ? "FFmpeg is required for local export. Install it and add to PATH."
-                  : err.message
-                : "Download failed.";
+                ? err.message
+                : "Could not render video in this browser.";
             setState({ type: "error", message });
           }
         }}
@@ -138,7 +99,7 @@ export function GenerateButton({
         {isLoading ? (
           <>
             <Loader2 data-icon="inline-start" className="animate-spin" />
-            Generating video…
+            Rendering… {progressPct}%
           </>
         ) : (
           <>
@@ -153,14 +114,14 @@ export function GenerateButton({
           {state.message}
         </p>
       )}
-      {isLoading && exportConfig.mode === "lambda" && (
+      {isLoading && (
         <p className="text-center font-mono text-[10px] text-muted-foreground">
-          Rendering on AWS — 30–90s typical.
+          Encoding on your computer — keep this tab open.
         </p>
       )}
-      {isLoading && exportConfig.mode === "local" && (
+      {!isLoading && exportConfig.hint && state.type === "initial" && (
         <p className="text-center font-mono text-[10px] text-muted-foreground">
-          Bundling Remotion — first run may take a minute.
+          {exportConfig.hint}
         </p>
       )}
     </div>
