@@ -1,9 +1,18 @@
-import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "GitHub Stars Video",
@@ -16,27 +25,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="flex min-h-dvh flex-col">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <header className="flex justify-end p-2">
-            <Button variant="ghost" asChild>
-              <a
-                href="https://github.com/radiumcoders/github-stars"
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                <ExternalLink className="mr-2 size-4" />
-                GitHub
-              </a>
-            </Button>
-            <ThemeToggle />
-          </header>
-          {children}
-          <footer className="p-4 text-center text-sm text-muted-foreground">
-            Not endorsed or affiliated with GitHub.
-          </footer>
-        </ThemeProvider>
+    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+      <body className="flex min-h-dvh flex-col bg-background font-sans">
+        <div className="vercel-grid pointer-events-none fixed inset-0" aria-hidden />
+        <div className="vercel-glow pointer-events-none fixed inset-x-0 top-0 h-[480px]" aria-hidden />
+
+        <header className="relative z-10 flex h-14 items-center justify-between border-b border-border px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex size-6 items-center justify-center border border-border bg-foreground">
+              <span className="font-mono text-[10px] font-medium text-background">★</span>
+            </div>
+            <span className="text-sm font-medium tracking-tight">GitHub Stars</span>
+          </div>
+          <Button variant="ghost" size="sm" asChild className="h-8 font-mono text-xs">
+            <a
+              href="https://github.com/radiumcoders/github-stars"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <ExternalLink className="mr-1.5 size-3.5" />
+              Source
+            </a>
+          </Button>
+        </header>
+
+        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
+
+        <footer className="relative z-10 border-t border-border px-4 py-6 text-center font-mono text-[11px] text-muted-foreground">
+          Not endorsed or affiliated with GitHub.
+        </footer>
       </body>
     </html>
   );

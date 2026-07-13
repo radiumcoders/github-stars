@@ -27,7 +27,7 @@ export function GenerateButton({
 
   if (exportConfig.mode === "disabled") {
     return (
-      <p className="max-w-md text-center text-sm text-muted-foreground">
+      <p className="border border-border bg-card px-4 py-3 text-center font-mono text-[11px] leading-relaxed text-muted-foreground">
         {exportConfig.hint}
       </p>
     );
@@ -48,17 +48,20 @@ export function GenerateButton({
     }
 
     return (
-      <form action={`/download?${params.toString()}`} method="GET">
-        <Button type="submit">
-          <Download className="mr-2 size-4" /> Download video
+      <form action={`/download?${params.toString()}`} method="GET" className="w-full">
+        <Button type="submit" variant="outline" className="w-full font-mono text-xs uppercase tracking-wider">
+          <Download className="mr-2 size-3.5" />
+          Download MP4
         </Button>
       </form>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-full flex-col gap-2">
       <Button
+        variant="outline"
+        className="w-full font-mono text-xs uppercase tracking-wider"
         onClick={async () => {
           try {
             if (!inputProps) return;
@@ -111,31 +114,32 @@ export function GenerateButton({
       >
         {state.type === "pending" || state.type === "started" ? (
           <>
-            <Loader2 className="mr-2 size-4 animate-spin" /> Generating video…
+            <Loader2 className="mr-2 size-3.5 animate-spin" />
+            Rendering
           </>
         ) : (
           <>
-            <FileVideo className="mr-2 size-4" /> Export MP4 video
+            <FileVideo className="mr-2 size-3.5" />
+            Export MP4
           </>
         )}
       </Button>
+
       {exportConfig.hint && state.type === "initial" && (
-        <p className="max-w-sm text-center text-xs text-muted-foreground">
-          {exportConfig.hint}
-        </p>
+        <p className="text-center font-mono text-[10px] text-muted-foreground">{exportConfig.hint}</p>
       )}
       {state.type === "pending" && exportConfig.mode === "local" && (
-        <p className="max-w-sm text-center text-xs text-muted-foreground">
-          Rendering locally — first run may take a minute while Remotion bundles.
+        <p className="text-center font-mono text-[10px] text-muted-foreground">
+          First run bundles Remotion — may take a minute.
         </p>
       )}
       {state.type === "pending" && exportConfig.mode === "lambda" && (
-        <p className="max-w-sm text-center text-xs text-muted-foreground">
-          Rendering on AWS Lambda — this usually takes 30–90 seconds.
+        <p className="text-center font-mono text-[10px] text-muted-foreground">
+          Rendering on AWS Lambda — 30–90s typical.
         </p>
       )}
       {state.type === "error" && (
-        <p className="max-w-sm text-center text-sm text-destructive">{state.message}</p>
+        <p className="text-center font-mono text-[11px] text-destructive">{state.message}</p>
       )}
     </div>
   );

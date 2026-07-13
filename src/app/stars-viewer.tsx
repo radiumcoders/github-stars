@@ -41,7 +41,7 @@ export function StarsViewer({
   }, []);
 
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-8">
+    <div className="flex w-full max-w-2xl flex-col items-center gap-10">
       <RepositoryForm
         initialRepository={repository}
         onSubmit={handleSubmit}
@@ -50,9 +50,9 @@ export function StarsViewer({
 
       {loading && (
         <ResultCard exportConfig={exportConfig}>
-          <div className="flex size-full items-center justify-center gap-2">
-            <Loader2 className="size-4 animate-spin" />
-            <div>Fetching stargazers…</div>
+          <div className="flex size-full items-center justify-center gap-2 font-mono text-xs text-neutral-500">
+            <Loader2 className="size-3.5 animate-spin" />
+            Fetching stargazers
           </div>
         </ResultCard>
       )}
@@ -60,8 +60,10 @@ export function StarsViewer({
       {!loading && result?.ok === false && (
         <ResultCard className="relative" exportConfig={exportConfig}>
           <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>
+            <CardTitle className="font-mono text-sm uppercase tracking-wider text-neutral-800">
+              Error
+            </CardTitle>
+            <CardDescription className="text-neutral-500">
               {result.code === "missing_token"
                 ? "Token required"
                 : result.code === "forbidden"
@@ -70,14 +72,14 @@ export function StarsViewer({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p>{result.message}</p>
+            <p className="text-sm text-neutral-600">{result.message}</p>
             {result.code === "not_found" && (
               <Image
                 src="/lost.gif"
                 alt=""
                 width={198}
                 height={187}
-                className="absolute bottom-0 left-1/2 -translate-x-1/2"
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 opacity-80"
               />
             )}
           </CardContent>
