@@ -19,7 +19,7 @@ export default async function Home({
           Star history, animated.
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Sign in with GitHub, enter a repository, and watch stargazers slide in — export as MP4.
+          Sign in with GitHub, enter a repository, and watch stargazers slide in — export as MP4 right in your browser.
         </p>
       </div>
       <StarsViewer initialRepository={repository} exportConfig={exportConfig} />

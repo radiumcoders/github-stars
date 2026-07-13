@@ -8,10 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "remotion-studio": "remotion studio src/video/index.ts",
-    "lambda:policies": "remotion lambda policies validate",
-    "lambda:deploy": "remotion lambda functions deploy --region us-east-1 --memory 2048 --timeout 120",
-    "lambda:site": "remotion lambda sites create src/video/index.ts --site-name=github-stars --region us-east-1",
-    "lambda:setup": "npm run lambda:deploy && npm run lambda:site",
     "auth:migrate": "npx @better-auth/cli@latest migrate --config src/lib/auth-migrate.ts -y"
   },
   "dependencies": {
@@ -21,10 +17,10 @@
     "@radix-ui/react-slot": "^1.1.1",
     "@react-hook/size": "^2.1.2",
     "@remotion/bundler": "4.0.489",
-    "@remotion/lambda": "4.0.489",
     "@remotion/player": "4.0.489",
     "@remotion/renderer": "4.0.489",
     "@remotion/tailwind-v4": "4.0.489",
+    "@remotion/web-renderer": "4.0.489",
     "@total-typescript/ts-reset": "^0.6.1",
     "better-auth": "^1.6.23",
     "class-variance-authority": "^0.7.1",
@@ -54,9 +50,9 @@
     "remotion": "4.0.489",
     "@remotion/bundler": "4.0.489",
     "@remotion/cli": "4.0.489",
-    "@remotion/lambda": "4.0.489",
     "@remotion/player": "4.0.489",
     "@remotion/renderer": "4.0.489",
-    "@remotion/tailwind-v4": "4.0.489"
+    "@remotion/tailwind-v4": "4.0.489",
+    "@remotion/web-renderer": "4.0.489"
   }
 }

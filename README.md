@@ -7,7 +7,7 @@ Generate a short Remotion animation of a GitHub repository’s stargazers, then 
 - **Next.js** (App Router) + React 19
 - **Better Auth** — GitHub OAuth (token used for the GitHub API)
 - **Neon Postgres** — auth tables
-- **Remotion** — preview player + local/Lambda MP4 export
+- **Remotion** — preview player + **in-browser** MP4 export (`@remotion/web-renderer`)
 - **shadcn/ui** + Tailwind CSS
 
 ## Setup
@@ -30,9 +30,15 @@ Open [http://localhost:3000](http://localhost:3000).
 | `DATABASE_URL` | Neon Postgres connection string |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth App (callback: `{BASE}/api/auth/callback/github`) |
 
-### Optional — MP4 on Vercel
+No AWS or FFmpeg setup is required. Export uses the browser’s WebCodecs API.
 
-See [scripts/setup-vercel-lambda.md](./scripts/setup-vercel-lambda.md). Locally, export uses Remotion CLI + FFmpeg when Lambda is not configured.
+### Browser support (export)
+
+| Browser | Minimum |
+|---------|---------|
+| Chrome | 94+ |
+| Firefox | 130+ |
+| Safari | 26+ |
 
 ## Scripts
 
@@ -42,10 +48,9 @@ See [scripts/setup-vercel-lambda.md](./scripts/setup-vercel-lambda.md). Locally,
 | `npm run build` | Production build |
 | `npm run remotion-studio` | Remotion Studio for the composition |
 | `npm run auth:migrate` | Apply Better Auth schema to Postgres |
-| `npm run lambda:setup` | Deploy Remotion Lambda function + site |
 
 ## Flow
 
 1. Sign in with GitHub (OAuth scopes include `repo` for private repos you can access).
 2. Enter `owner/repo` and generate a preview.
-3. Download MP4 — local FFmpeg when developing; Remotion Lambda in production when configured.
+3. Download MP4 — rendered on **your device** in the browser (keep the tab open).
