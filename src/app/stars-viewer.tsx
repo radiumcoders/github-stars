@@ -20,6 +20,7 @@ import {
   type PresetId,
 } from "@/video/presets";
 import { Props } from "@/video/schema";
+import { contrastTextColor } from "@/video/text-for-background";
 import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -62,6 +63,11 @@ export function StarsViewer({
     setPrimaryColor(colors.primary);
     setShaderColor(colors.shader);
     setTextColor(colors.text);
+  }, []);
+
+  const handlePrimaryColorChange = useCallback((color: string) => {
+    setPrimaryColor(color);
+    setTextColor(contrastTextColor(color));
   }, []);
 
   const handleSubmit = useCallback(async (repo: string) => {
@@ -135,7 +141,7 @@ export function StarsViewer({
           preset={preset}
           onPresetChange={handlePresetChange}
           primaryColor={primaryColor}
-          onPrimaryColorChange={setPrimaryColor}
+          onPrimaryColorChange={handlePrimaryColorChange}
           shaderColor={shaderColor}
           onShaderColorChange={setShaderColor}
           textColor={textColor}

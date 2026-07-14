@@ -13,7 +13,7 @@ import { FluidBackground } from './fluid-background'
 import { Props } from './schema'
 
 const { fontFamily } = loadFont('normal', {
-  weights: ['400', '500', '600', '800'],
+  weights: ['300', '400', '500'],
   subsets: ['latin'],
 })
 
@@ -39,7 +39,7 @@ export function EditorialPreset({
   textColor,
 }: Props) {
   return (
-    <AbsoluteFill style={{ fontFamily, color: textColor }}>
+    <AbsoluteFill className="font-light" style={{ fontFamily, color: textColor }}>
       <FluidBackground primaryColor={primaryColor} shaderColor={shaderColor} />
       <div className="relative flex h-full flex-col justify-center px-24 pb-10">
         <Eyebrow
@@ -79,10 +79,10 @@ function Eyebrow({
         alt={user}
         className="size-[52px] rounded-full"
       />
-      <span className="font-medium tracking-wide opacity-60">
+      <span className="font-light tracking-wide opacity-60">
         {user}
         <span className="mx-[0.35em] opacity-50">/</span>
-        <span className="font-semibold opacity-90">{repository}</span>
+        <span className="font-normal opacity-90">{repository}</span>
       </span>
     </div>
   )
@@ -108,10 +108,10 @@ function BigCount({ stars }: { stars: number }) {
         transform: `translateY(${(1 - enter) * 28}px)`,
       }}
     >
-      <span className="text-[200px] font-extrabold leading-none tracking-tighter tabular-nums">
+      <span className="text-[200px] font-light leading-none tracking-tighter tabular-nums">
         {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
       </span>
-      <span className="text-[68px] font-medium leading-none tracking-tight opacity-40">
+      <span className="text-[68px] font-light leading-none tracking-tight opacity-40">
         stars
       </span>
     </div>
@@ -177,7 +177,7 @@ function Caption({ remaining, delay }: { remaining: number; delay: number }) {
 
   return (
     <span
-      className="ml-6 text-[30px] font-medium tracking-wide"
+      className="ml-6 text-[30px] font-light tracking-wide"
       style={{ opacity: enter * 0.5 }}
     >
       and {remaining.toLocaleString('en-US', { useGrouping: true })} others

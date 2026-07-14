@@ -1,3 +1,5 @@
+import { contrastTextColor } from './text-for-background'
+
 // Preset metadata only — no Remotion imports, so it is safe to use from
 // server components and anything that must not evaluate Remotion during SSR.
 // The preset id → component mapping lives in composition.tsx.
@@ -16,27 +18,35 @@ export type PresetColors = {
 
 // Each preset ships with colors it was designed around; picking a preset
 // applies them (the user can still override afterwards).
+function palette(primary: string, shader: string): PresetColors {
+  return {
+    primary,
+    shader,
+    text: contrastTextColor(primary),
+  }
+}
+
 export const presets: { id: PresetId; label: string; colors: PresetColors }[] =
   [
     {
       id: 'generic',
       label: 'Generic',
-      colors: { primary: '#ffffff', shader: '#ffffff', text: '#111827' },
+      colors: palette('#ffffff', '#ffffff'),
     },
     {
       id: 'confetti',
       label: 'Confetti Celebration',
-      colors: { primary: '#ffffff', shader: '#ffffff', text: '#111827' },
+      colors: palette('#ffffff', '#ffffff'),
     },
     {
       id: 'editorial',
       label: 'Editorial',
-      colors: { primary: '#ffffff', shader: '#ffffff', text: '#111827' },
+      colors: palette('#ffffff', '#ffffff'),
     },
     {
       id: 'aurora',
       label: 'Aurora Glass',
-      colors: { primary: '#0b1120', shader: '#7c3aed', text: '#ffffff' },
+      colors: palette('#0b1120', '#7c3aed'),
     },
   ]
 
