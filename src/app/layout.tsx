@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Star } from "lucide-react";
 import type { Metadata } from "next";
@@ -42,6 +43,7 @@ export default function RootLayout({
         </div>
 
         <div className="flex flex-1 flex-col">{children}</div>
+        <Analytics />
       </body>
     </html>
   );
