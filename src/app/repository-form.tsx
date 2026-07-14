@@ -201,8 +201,8 @@ export function RepositoryForm({
           ) : (
             <>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Sign in with GitHub so we can use your OAuth authorization to
-                fetch stargazers for repositories you can access.
+                Sign in with GitHub to identify your account and fetch
+                stargazers for your repositories.
               </p>
               <Button
                 type="button"
