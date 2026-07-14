@@ -30,7 +30,7 @@ function mapError(err: unknown): GithubStarsResult {
         ok: false,
         code: "forbidden",
         message:
-          "Access denied. Your GitHub OAuth authorization may not have access to this repository — try signing in again or use a repo you own or collaborate on.",
+          "Access denied. This repository may be private — sign out and sign in again, or use a public repository.",
       };
     }
     if (status === 404) {
