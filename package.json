@@ -17,6 +17,7 @@
     "@radix-ui/react-slot": "^1.1.1",
     "@react-hook/size": "^2.1.2",
     "@remotion/bundler": "4.0.489",
+    "@remotion/google-fonts": "^4.0.489",
     "@remotion/player": "4.0.489",
     "@remotion/renderer": "4.0.489",
     "@remotion/tailwind-v4": "4.0.489",
@@ -48,6 +49,7 @@
   },
   "overrides": {
     "remotion": "4.0.489",
+    "@remotion/google-fonts": "4.0.489",
     "@remotion/bundler": "4.0.489",
     "@remotion/cli": "4.0.489",
     "@remotion/player": "4.0.489",
