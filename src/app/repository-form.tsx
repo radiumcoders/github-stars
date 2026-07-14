@@ -3,6 +3,7 @@
 import { fetchGithubLogin } from "@/app/actions";
 import { authClient } from "@/lib/auth-client";
 import { normalizeRepoName } from "@/lib/normalize-repo-name";
+import { truncateUsername } from "@/lib/truncate-username";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -201,8 +202,8 @@ export function RepositoryForm({
           ) : (
             <>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Sign in with GitHub to identify your account and fetch
-                stargazers for your repositories.
+                Sign in with GitHub so we can use your OAuth authorization to
+                fetch stargazers for repositories you can access.
               </p>
               <Button
                 type="button"
@@ -235,8 +236,11 @@ export function RepositoryForm({
           <Label htmlFor="repository">Repository</Label>
           <div className="flex">
             {githubLogin ? (
-              <span className="inline-flex h-9 items-center border border-r-0 border-input bg-muted/30 px-3 font-mono text-sm text-muted-foreground">
-                {githubLogin}/
+              <span
+                className="inline-flex h-9 max-w-[9rem] shrink-0 items-center border border-r-0 border-input bg-muted/30 px-3 font-mono text-sm text-muted-foreground"
+                title={githubLogin}
+              >
+                <span className="truncate">{truncateUsername(githubLogin, 16)}/</span>
               </span>
             ) : null}
             <Input

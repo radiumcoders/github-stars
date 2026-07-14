@@ -14,7 +14,7 @@ import { FluidBackground } from './fluid-background'
 import { Props } from './schema'
 
 const { fontFamily } = loadFont('normal', {
-  weights: ['500', '600', '800'],
+  weights: ['300', '400', '500'],
   subsets: ['latin'],
 })
 
@@ -46,7 +46,7 @@ export function ConfettiPreset({
   textColor,
 }: Props) {
   return (
-    <AbsoluteFill style={{ color: textColor, fontFamily }}>
+    <AbsoluteFill className="font-light" style={{ color: textColor, fontFamily }}>
       <FluidBackground primaryColor={primaryColor} shaderColor={shaderColor} />
       <Confetti />
       <OrbitingAvatars stargazers={stargazers} />
@@ -198,12 +198,12 @@ function CenterCount({ stars }: { stars: number }) {
         className="flex flex-col items-center -mt-16"
         style={{ transform: `scale(${scale})` }}
       >
-        <div className="text-[150px] leading-none font-extrabold tracking-tight tabular-nums">
+        <div className="text-[150px] leading-none font-light tracking-tight tabular-nums">
           {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
         </div>
         <div className="mt-4 flex items-center gap-3">
           <StarIcon size={30} />
-          <span className="text-[28px] font-semibold uppercase tracking-[0.35em] opacity-60">
+          <span className="text-[28px] font-light uppercase tracking-[0.35em] opacity-60">
             Stars
           </span>
           <StarIcon size={30} />
@@ -253,7 +253,7 @@ function RepositoryInformation({
       }}
     >
       {/* Pill is always a white box, so it keeps its own dark text. */}
-      <div className="flex items-center gap-3 rounded-full bg-white border border-gray-100 shadow-lg px-7 py-3 text-[34px] text-gray-800">
+      <div className="flex items-center gap-3 rounded-full bg-white border border-gray-100 shadow-lg px-7 py-3 text-[34px] font-light text-gray-800">
         <Img
           src={userAvatarUrl}
           alt={user}
@@ -262,7 +262,7 @@ function RepositoryInformation({
         <span>
           {user}
           <span className="mx-[0.2em] opacity-40">/</span>
-          <strong className="font-bold">{repository}</strong>
+          <span className="font-normal">{repository}</span>
         </span>
       </div>
     </div>

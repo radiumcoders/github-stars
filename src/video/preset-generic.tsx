@@ -1,3 +1,4 @@
+import { loadFont } from '@remotion/google-fonts/Inter'
 import {
   AbsoluteFill,
   Easing,
@@ -9,6 +10,11 @@ import {
 import { animationDurationInSeconds } from './config'
 import { FluidBackground } from './fluid-background'
 import { Props } from './schema'
+
+const { fontFamily } = loadFont('normal', {
+  weights: ['300', '400', '500'],
+  subsets: ['latin'],
+})
 
 const stargazerAvatarSize = 128
 const stargazerAvatarGap = 16
@@ -27,7 +33,7 @@ export function GenericPreset({
   return (
     <AbsoluteFill>
       <FluidBackground primaryColor={primaryColor} shaderColor={shaderColor} />
-      <AbsoluteFill style={{ color: textColor }}>
+      <AbsoluteFill className="font-light" style={{ color: textColor, fontFamily }}>
         <RepositoryInformation
           user={user}
           userAvatarUrl={userAvatarUrl}
@@ -63,10 +69,10 @@ function StarCount({
   )
 
   return (
-    <div className="text-right px-16 pb-16 text-[128px]">
-      <strong className="tabular-nums">
+    <div className="text-right px-16 pb-16 text-[128px] font-light">
+      <span className="tabular-nums">
         {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
-      </strong>
+      </span>
       &nbsp;stars
     </div>
   )
@@ -97,7 +103,7 @@ function RepositoryInformation({
   repository: string
 }) {
   return (
-    <div className="p-16 text-[72px] whitespace-nowrap overflow-hidden text-ellipsis">
+    <div className="p-16 text-[72px] font-light whitespace-nowrap overflow-hidden text-ellipsis">
       <span>
         <Img
           src={userAvatarUrl}
@@ -107,7 +113,7 @@ function RepositoryInformation({
         {user}
       </span>
       <span className="opacity-30 mx-[0.25em]">/</span>
-      <strong>{repository}</strong>
+      <span className="font-normal">{repository}</span>
     </div>
   )
 }

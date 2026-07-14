@@ -14,7 +14,7 @@ import { FluidBackground } from './fluid-background'
 import { Props } from './schema'
 
 const { fontFamily } = loadFont('normal', {
-  weights: ['500', '600', '800'],
+  weights: ['300', '400', '500'],
   subsets: ['latin'],
 })
 
@@ -34,7 +34,7 @@ export function AuroraPreset({
   textColor,
 }: Props) {
   return (
-    <AbsoluteFill style={{ fontFamily, color: textColor }}>
+    <AbsoluteFill className="font-light" style={{ fontFamily, color: textColor }}>
       <FluidBackground primaryColor={primaryColor} shaderColor={shaderColor} />
       <FloatingAvatars stargazers={stargazers} shaderColor={shaderColor} />
       <GlassCard
@@ -145,11 +145,11 @@ function GlassCard({
         <ShineSweep />
         <div className="relative flex items-center gap-3">
           <StarIcon size={30} />
-          <span className="text-[24px] font-semibold uppercase tracking-[0.3em] opacity-70">
+          <span className="text-[24px] font-light uppercase tracking-[0.3em] opacity-70">
             Total stars
           </span>
         </div>
-        <div className="relative mt-5 text-[136px] font-extrabold leading-none tracking-tighter tabular-nums">
+        <div className="relative mt-5 text-[136px] font-light leading-none tracking-tighter tabular-nums">
           {starsToDisplay.toLocaleString('en-US', { useGrouping: true })}
         </div>
         <div className="relative mt-9 h-px w-full bg-current opacity-20" />
@@ -159,10 +159,10 @@ function GlassCard({
             alt={user}
             className="size-[44px] rounded-full"
           />
-          <span className="font-medium opacity-80">
+          <span className="font-light opacity-80">
             {user}
             <span className="mx-[0.25em] opacity-50">/</span>
-            <span className="font-semibold opacity-100">{repository}</span>
+            <span className="font-normal opacity-100">{repository}</span>
           </span>
         </div>
       </div>
