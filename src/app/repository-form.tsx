@@ -1,13 +1,15 @@
 "use client";
 
+import { fetchGithubLogin } from "@/app/actions";
 import { authClient } from "@/lib/auth-client";
+import { normalizeRepoName } from "@/lib/normalize-repo-name";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Loader2, LogOut } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /** Brand mark (lucide no longer ships GitHub icons). */
 function GitHubMark({ className }: { className?: string }) {
@@ -42,12 +44,33 @@ export function RepositoryForm({
 }) {
   const router = useRouter();
   const { data: session, isPending, refetch } = authClient.useSession();
-  const [repository, setRepository] = useState(initialRepository);
+  const [repository, setRepository] = useState(
+    normalizeRepoName(initialRepository),
+  );
+  const [githubLogin, setGithubLogin] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const isAuthenticated = Boolean(session?.user);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setGithubLogin(null);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchGithubLogin().then((login) => {
+      if (!cancelled) {
+        setGithubLogin(login);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   async function handleSignOut() {
     setAuthError(null);
@@ -112,9 +135,7 @@ export function RepositoryForm({
       onSubmit={(event) => {
         event.preventDefault();
         if (!isAuthenticated) return;
-        const cleanRepository = repository
-          .trim()
-          .replace(/^(https?:\/\/)?github.com\//, "");
+        const cleanRepository = normalizeRepoName(repository);
         setRepository(cleanRepository);
         onSubmit(cleanRepository);
       }}
@@ -212,19 +233,29 @@ export function RepositoryForm({
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="repository">Repository</Label>
-          <Input
-            id="repository"
-            name="repository"
-            placeholder="owner/repo"
-            className="font-mono"
-            autoCapitalize="off"
-            autoComplete="off"
-            autoCorrect="off"
-            enterKeyHint="go"
-            required
-            value={repository}
-            onChange={(event) => setRepository(event.target.value)}
-          />
+          <div className="flex">
+            {githubLogin ? (
+              <span className="inline-flex h-9 items-center border border-r-0 border-input bg-muted/30 px-3 font-mono text-sm text-muted-foreground">
+                {githubLogin}/
+              </span>
+            ) : null}
+            <Input
+              id="repository"
+              name="repository"
+              placeholder="github-stars"
+              className={`font-mono ${githubLogin ? "rounded-l-none" : ""}`}
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              enterKeyHint="go"
+              required
+              value={repository}
+              onChange={(event) => setRepository(event.target.value)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Uses your signed-in GitHub account as the owner.
+          </p>
         </div>
 
         <Button
