@@ -1,4 +1,5 @@
 # Stargazer Wall
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/1deaa808-1d1c-4315-a433-75a99415e4b0" />
 
 Generate a short Remotion animation of a GitHub repository’s stargazers, then export it as MP4.
 
