@@ -3,6 +3,8 @@
 import { fetchGithubStars } from "@/app/actions";
 import { RepositoryForm } from "@/app/repository-form";
 import { ResultCard } from "@/app/result-card";
+import { StarLogo } from "@/components/star-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +26,7 @@ import {
   type PresetId,
 } from "@/video/presets";
 import { Props } from "@/video/schema";
-import { AlertCircle, Clapperboard, ExternalLink } from "lucide-react";
+import { AlertCircle, ExternalLink } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useState } from "react";
@@ -103,25 +105,24 @@ export function StarsViewer({
       <div className="flex h-10 shrink-0 items-stretch border-b border-border">
         <div className="flex w-full items-center justify-between px-4 lg:w-80 lg:border-r lg:border-border">
           <div className="flex items-center gap-2">
-            <div className="flex size-5 items-center justify-center rounded-sm bg-foreground">
-              <span className="font-mono text-[10px] font-medium text-background">
-                ★
-              </span>
-            </div>
+            <StarLogo className="size-6 text-foreground" />
             <span className="text-sm font-medium tracking-tight">
               GitHub Stars
             </span>
           </div>
-          <Button variant="ghost" size="sm" asChild>
-            <a
-              href="https://github.com/radiumcoders/github-stars"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <ExternalLink data-icon="inline-start" />
-              Source
-            </a>
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" asChild>
+              <a
+                href="https://github.com/radiumcoders/github-stars"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <ExternalLink data-icon="inline-start" />
+                Source
+              </a>
+            </Button>
+          </div>
         </div>
         <div className="hidden min-w-0 flex-1 items-center justify-between px-4 lg:flex">
           <span className="text-sm font-medium">Preview</span>
@@ -225,7 +226,7 @@ export function StarsViewer({
             <Empty className="size-full border-0">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <Clapperboard />
+                  <StarLogo className="size-6" />
                 </EmptyMedia>
                 <EmptyTitle>No preview yet</EmptyTitle>
                 <EmptyDescription>

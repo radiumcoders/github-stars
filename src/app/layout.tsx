@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/components/theme-provider";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -23,7 +24,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
       <body className="flex min-h-dvh flex-col bg-background font-sans lg:h-dvh lg:overflow-hidden">
         <a
           href="#main"
@@ -31,7 +36,9 @@ export default function RootLayout({
         >
           Skip to preview
         </a>
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <ThemeProvider>
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        </ThemeProvider>
       </body>
     </html>
   );
