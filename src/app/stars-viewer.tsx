@@ -3,12 +3,16 @@
 import { fetchGithubStars } from "@/app/actions";
 import { RepositoryForm } from "@/app/repository-form";
 import { ResultCard } from "@/app/result-card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
 import type { ExportConfig } from "@/lib/export-config";
 import type { GithubStarsResult } from "@/lib/github-stars-info";
 import {
@@ -20,20 +24,20 @@ import {
   type PresetId,
 } from "@/video/presets";
 import { Props } from "@/video/schema";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Clapperboard, ExternalLink } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useState } from "react";
 
-// Remotion must not evaluate during SSR (version registry + DOM APIs).
 const CompositionPlayer = dynamic(
   () =>
     import("@/app/composition-player").then((m) => m.CompositionPlayer),
   {
     ssr: false,
     loading: () => (
-      <div className="flex size-full items-center justify-center font-mono text-xs text-muted-foreground">
-        Loading player…
+      <div className="flex size-full items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Spinner className="size-3.5" />
+        Loading player
       </div>
     ),
   },
@@ -54,8 +58,6 @@ export function StarsViewer({
   const [shaderColor, setShaderColor] = useState(defaultShaderColor);
   const [textColor, setTextColor] = useState(defaultTextColor);
 
-  // Switching preset applies its designed palette; the pickers stay live
-  // for overrides afterwards.
   const handlePresetChange = useCallback((next: PresetId) => {
     setPreset(next);
     const colors = presetColors(next);
@@ -71,66 +73,93 @@ export function StarsViewer({
     try {
       const data = await fetchGithubStars(repo);
       setResult(data);
+    } catch (err) {
+      setResult({
+        ok: false,
+        code: "unknown",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch repository data.",
+      });
     } finally {
       setLoading(false);
     }
   }, []);
 
+  const inputProps =
+    !loading && result?.ok === true
+      ? {
+          ...(result.data as Partial<Props>),
+          preset,
+          primaryColor,
+          shaderColor,
+          textColor,
+        }
+      : undefined;
+
   return (
-    <div className="flex w-full max-w-2xl flex-col items-center gap-10">
-      <RepositoryForm
-        initialRepository={repository}
-        onSubmit={handleSubmit}
-        loading={loading}
-      />
-
-      {loading && (
-        <ResultCard exportConfig={exportConfig}>
-          <div className="flex size-full items-center justify-center gap-2 font-mono text-xs text-muted-foreground">
-            <Loader2 className="size-3.5 animate-spin" />
-            Fetching stargazers
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-10 shrink-0 items-stretch border-b border-border">
+        <div className="flex w-full items-center justify-between px-4 lg:w-80 lg:border-r lg:border-border">
+          <div className="flex items-center gap-2">
+            <div className="flex size-5 items-center justify-center rounded-sm bg-foreground">
+              <span className="font-mono text-[10px] font-medium text-background">
+                ★
+              </span>
+            </div>
+            <span className="text-sm font-medium tracking-tight">
+              GitHub Stars
+            </span>
           </div>
-        </ResultCard>
-      )}
+          <Button variant="ghost" size="sm" asChild>
+            <a
+              href="https://github.com/radiumcoders/github-stars"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <ExternalLink data-icon="inline-start" />
+              Source
+            </a>
+          </Button>
+        </div>
+        <div className="hidden min-w-0 flex-1 items-center justify-between px-4 lg:flex">
+          <span className="text-sm font-medium">Preview</span>
+          {inputProps ? (
+            <span className="truncate font-mono text-xs text-muted-foreground">
+              {inputProps.user}/{inputProps.repository}
+            </span>
+          ) : (
+            <span className="font-mono text-xs text-muted-foreground">
+              1280 × 720
+            </span>
+          )}
+        </div>
+      </div>
 
-      {!loading && result?.ok === false && (
-        <ResultCard className="relative" exportConfig={exportConfig}>
-          <CardHeader>
-            <CardTitle className="font-mono text-sm uppercase tracking-wider">
-              Error
-            </CardTitle>
-            <CardDescription>
-              {result.code === "missing_token"
-                ? "GitHub authorization required"
-                : result.code === "forbidden"
-                  ? "Access denied"
-                  : "Could not load repository"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{result.message}</p>
-            {result.code === "not_found" && (
-              <Image
-                src="/lost.gif"
-                alt=""
-                width={198}
-                height={187}
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 opacity-80"
-              />
-            )}
-          </CardContent>
-        </ResultCard>
-      )}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <aside className="flex w-full shrink-0 flex-col border-b border-border lg:w-80 lg:border-b-0 lg:border-r">
+          <RepositoryForm
+            initialRepository={repository}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
+          <p className="mt-auto border-t border-border px-4 py-3 text-[11px] text-muted-foreground">
+            Not endorsed or affiliated with GitHub.
+          </p>
+        </aside>
 
-      {!loading && result?.ok === true && (
-        <ResultCard
-          inputProps={{
-            ...(result.data as Partial<Props>),
-            preset,
-            primaryColor,
-            shaderColor,
-            textColor,
-          }}
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-4 lg:hidden">
+            <span className="text-sm font-medium">Preview</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {inputProps
+                ? `${inputProps.user}/${inputProps.repository}`
+                : "1280 × 720"}
+            </span>
+          </div>
+          <ResultCard
+          inputProps={inputProps}
           exportConfig={exportConfig}
           preset={preset}
           onPresetChange={handlePresetChange}
@@ -141,17 +170,73 @@ export function StarsViewer({
           textColor={textColor}
           onTextColorChange={setTextColor}
         >
-          <CompositionPlayer
-            inputProps={{
-              ...result.data,
-              preset,
-              primaryColor,
-              shaderColor,
-              textColor,
-            }}
-          />
+          {loading ? (
+            <Empty className="size-full border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Spinner />
+                </EmptyMedia>
+                <EmptyTitle>Fetching stargazers</EmptyTitle>
+                <EmptyDescription>
+                  Reading the repository so we can build the preview.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : null}
+
+          {!loading && result?.ok === false ? (
+            <div className="flex size-full flex-col items-center justify-center gap-4 p-6">
+              <Alert variant="destructive" className="max-w-md">
+                <AlertCircle />
+                <AlertTitle>
+                  {result.code === "missing_token"
+                    ? "GitHub authorization required"
+                    : result.code === "forbidden"
+                      ? "Access denied"
+                      : "Could not load repository"}
+                </AlertTitle>
+                <AlertDescription>{result.message}</AlertDescription>
+              </Alert>
+              {result.code === "not_found" ? (
+                <Image
+                  src="/lost.gif"
+                  alt=""
+                  width={198}
+                  height={187}
+                  className="opacity-80"
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {!loading && result?.ok === true ? (
+            <CompositionPlayer
+              inputProps={{
+                ...result.data,
+                preset,
+                primaryColor,
+                shaderColor,
+                textColor,
+              }}
+            />
+          ) : null}
+
+          {!loading && result === null ? (
+            <Empty className="size-full border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Clapperboard />
+                </EmptyMedia>
+                <EmptyTitle>No preview yet</EmptyTitle>
+                <EmptyDescription>
+                  Sign in and generate a repository to fill this stage.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : null}
         </ResultCard>
-      )}
+        </section>
+      </div>
     </div>
   );
 }

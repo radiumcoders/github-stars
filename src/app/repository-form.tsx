@@ -1,11 +1,19 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowRight, Loader2, LogOut } from "lucide-react";
-import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import { ArrowRight, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -24,11 +32,20 @@ function GitHubMark({ className }: { className?: string }) {
 }
 
 function homeCallbackURL() {
-  // Relative path — always passes Better Auth trusted-origin checks.
   if (typeof window === "undefined") return "/";
   const path = window.location.pathname || "/";
   const search = window.location.search || "";
   return `${path}${search}` || "/";
+}
+
+function userInitials(name: string | null | undefined) {
+  if (!name) return "GH";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 export function RepositoryForm({
@@ -55,7 +72,6 @@ export function RepositoryForm({
     try {
       const { error } = await authClient.signOut({
         fetchOptions: {
-          // Ensure cookies are cleared on this response before we navigate.
           credentials: "include",
         },
       });
@@ -64,7 +80,6 @@ export function RepositoryForm({
         setSigningOut(false);
         return;
       }
-      // Hard navigation so any leftover auth cookies / client cache are gone.
       window.location.assign("/");
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Sign out failed.");
@@ -80,7 +95,6 @@ export function RepositoryForm({
         provider: "github",
         callbackURL: homeCallbackURL(),
         errorCallbackURL: homeCallbackURL(),
-        // Client redirect plugin also handles `data.url`; keep this for clarity.
         disableRedirect: false,
       });
 
@@ -90,13 +104,11 @@ export function RepositoryForm({
         return;
       }
 
-      // If the redirect plugin didn't navigate (SSR/edge cases), do it ourselves.
       if (data?.url && data.redirect !== false) {
         window.location.assign(data.url);
         return;
       }
 
-      // Already signed in / no redirect path — refresh UI.
       await refetch();
       router.refresh();
       setSigningIn(false);
@@ -108,7 +120,7 @@ export function RepositoryForm({
 
   return (
     <form
-      className="w-full max-w-lg border border-border bg-card"
+      className="flex flex-col"
       onSubmit={(event) => {
         event.preventDefault();
         if (!isAuthenticated) return;
@@ -119,122 +131,119 @@ export function RepositoryForm({
         onSubmit(cleanRepository);
       }}
     >
-      <div className="border-b border-border px-5 py-4">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Configuration
+      <div className="flex flex-col gap-1 px-4 py-4">
+        <h2 className="text-sm font-medium">Project</h2>
+        <p className="text-sm text-muted-foreground">
+          Sign in and choose a repository to preview.
         </p>
-        <h2 className="mt-1 text-lg font-medium tracking-tight">
-          Generate star video
-        </h2>
       </div>
-
-      <div className="flex flex-col gap-5 p-5">
-        <div className="flex flex-col gap-3 rounded border border-border bg-muted/30 p-4">
-          <Label>GitHub authorization</Label>
-          {isPending ? (
-            <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-              <Loader2 className="size-3.5 animate-spin" />
-              Checking session
-            </div>
-          ) : isAuthenticated ? (
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                {session?.user.image ? (
-                  <Image
-                    src={session.user.image}
-                    alt=""
-                    width={32}
-                    height={32}
-                    className="size-8 rounded-full border border-border"
-                  />
-                ) : (
-                  <div className="flex size-8 items-center justify-center rounded-full border border-border bg-background">
-                    <GitHubMark className="size-4" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {session?.user.name ?? session?.user.email}
-                  </p>
-                  <p className="font-mono text-[10px] text-muted-foreground">
-                    Authorized via GitHub OAuth
-                  </p>
-                </div>
+      <Separator />
+      <div className="px-4 py-4">
+        <FieldGroup className="gap-4">
+          <Field data-invalid={Boolean(authError) || undefined}>
+            <FieldLabel>GitHub account</FieldLabel>
+            {isPending ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner className="size-3.5" />
+                Checking session
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={signingOut}
-                className="shrink-0 font-mono text-[10px] uppercase"
-                onClick={handleSignOut}
-              >
-                {signingOut ? (
-                  <Loader2 data-icon="inline-start" className="animate-spin" />
-                ) : (
-                  <LogOut data-icon="inline-start" />
-                )}
-                Sign out
-              </Button>
-            </div>
-          ) : (
-            <>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Sign in with GitHub so we can use your OAuth authorization to
-                fetch stargazers for repositories you can access.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={signingIn}
-                className="w-full font-mono text-xs uppercase tracking-wider"
-                onClick={handleSignIn}
-              >
-                {signingIn ? (
-                  <>
-                    <Loader2 data-icon="inline-start" className="animate-spin" />
-                    Redirecting to GitHub…
-                  </>
-                ) : (
-                  <>
-                    <GitHubMark data-icon="inline-start" className="size-3.5" />
-                    Sign in with GitHub
-                  </>
-                )}
-              </Button>
-            </>
-          )}
+            ) : isAuthenticated ? (
+              <div className="flex items-center justify-between gap-3 rounded-sm border border-border p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="size-8">
+                    {session?.user.image ? (
+                      <AvatarImage src={session.user.image} alt="" />
+                    ) : null}
+                    <AvatarFallback>
+                      {session?.user.image ? (
+                        <GitHubMark className="size-3.5" />
+                      ) : (
+                        userInitials(session?.user.name)
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {session?.user.name ?? session?.user.email}
+                    </p>
+                    <p className="truncate font-mono text-[11px] text-muted-foreground">
+                      {session?.user.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={signingOut}
+                  className="shrink-0"
+                  onClick={handleSignOut}
+                >
+                  {signingOut ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <LogOut data-icon="inline-start" />
+                  )}
+                  Sign out
+                </Button>
+              </div>
+            ) : (
+              <>
+                <FieldDescription>
+                  Use GitHub so we can fetch stargazers for repositories you can
+                  access.
+                </FieldDescription>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={signingIn}
+                  onClick={handleSignIn}
+                >
+                  {signingIn ? (
+                    <>
+                      <Spinner data-icon="inline-start" />
+                      Redirecting to GitHub
+                    </>
+                  ) : (
+                    <>
+                      <GitHubMark data-icon="inline-start" />
+                      Sign in with GitHub
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+            {authError ? <FieldError>{authError}</FieldError> : null}
+          </Field>
 
-          {authError && (
-            <p className="font-mono text-[11px] text-destructive">{authError}</p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="repository">Repository</Label>
-          <Input
-            id="repository"
-            name="repository"
-            placeholder="owner/repo"
-            className="font-mono"
-            autoCapitalize="off"
-            autoComplete="off"
-            autoCorrect="off"
-            enterKeyHint="go"
-            required
-            value={repository}
-            onChange={(event) => setRepository(event.target.value)}
-          />
-        </div>
-
+          <Field>
+            <FieldLabel htmlFor="repository">Repository</FieldLabel>
+            <Input
+              id="repository"
+              name="repository"
+              placeholder="owner/repo"
+              className="font-mono"
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              enterKeyHint="go"
+              required
+              disabled={!isAuthenticated || isPending}
+              value={repository}
+              onChange={(event) => setRepository(event.target.value)}
+            />
+          </Field>
+        </FieldGroup>
+      </div>
+      <div className="px-4 pb-4">
         <Button
           type="submit"
           disabled={loading || !isAuthenticated || isPending}
-          className="w-full font-mono text-xs uppercase tracking-wider"
+          className="w-full"
         >
           {loading ? (
             <>
-              <Loader2 data-icon="inline-start" className="animate-spin" />
+              <Spinner data-icon="inline-start" />
               Loading
             </>
           ) : (

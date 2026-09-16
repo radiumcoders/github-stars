@@ -1,10 +1,20 @@
+"use client";
+
 import { GenerateButton } from "@/app/generate-button";
-import { Card } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { ExportConfig } from "@/lib/export-config";
 import { cn } from "@/lib/utils";
 import { presets, type PresetId } from "@/video/presets";
 import { Props } from "@/video/schema";
 import { ReactNode } from "react";
+
+const presetShortLabels: Record<PresetId, string> = {
+  generic: "Generic",
+  confetti: "Confetti",
+  editorial: "Editorial",
+  aurora: "Aurora",
+};
 
 export function ResultCard({
   children,
@@ -37,86 +47,60 @@ export function ResultCard({
     onPresetChange &&
     onPrimaryColorChange &&
     onShaderColorChange &&
-    onTextColorChange;
+    onTextColorChange &&
+    Boolean(inputProps);
 
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-4">
-      <div className="w-full">
-        <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
-          <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Preview
-          </span>
-          {inputProps && (
-            <span className="font-mono text-[11px] text-muted-foreground">
-              {inputProps.user}/{inputProps.repository}
-            </span>
-          )}
-        </div>
-        <div className="border border-border bg-background p-px">
-          <Card
-            className={cn(
-              className,
-              "aspect-video size-full overflow-hidden border-0 bg-white text-black",
-            )}
-          >
-            {children}
-          </Card>
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className={cn("relative min-h-[22rem] min-w-0 flex-1 bg-background lg:min-h-0", className)}>
+        <div className="absolute inset-0 flex overflow-hidden">{children}</div>
       </div>
 
-      {hasCustomizer && (
-        <div className="border border-border">
-          <div className="border-b border-border px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            Customize
-          </div>
-          <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
-            <Field label="Preset">
-              <select
+      {hasCustomizer ? (
+        <div className="shrink-0 border-t border-border px-4 py-3">
+          <FieldGroup className="gap-3">
+            <Field>
+              <FieldLabel>Preset</FieldLabel>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
                 value={preset}
-                onChange={(e) => onPresetChange(e.target.value as PresetId)}
-                className="h-9 w-full cursor-pointer border border-border bg-background px-2 font-mono text-[11px] uppercase tracking-wider text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                aria-label="Preset"
+                onValueChange={(value) => {
+                  if (value) onPresetChange(value as PresetId);
+                }}
+                className="flex flex-wrap justify-start"
               >
-                {presets.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
+                {presets.map((item) => (
+                  <ToggleGroupItem key={item.id} value={item.id}>
+                    {presetShortLabels[item.id]}
+                  </ToggleGroupItem>
                 ))}
-              </select>
+              </ToggleGroup>
             </Field>
-            <ColorField
-              label="Background"
-              value={primaryColor}
-              onChange={onPrimaryColorChange}
-            />
-            <ColorField
-              label="Fluid"
-              value={shaderColor}
-              onChange={onShaderColorChange}
-            />
-            <ColorField
-              label="Text"
-              value={textColor}
-              onChange={onTextColorChange}
-            />
-          </div>
+            <div className="grid grid-cols-3 gap-3">
+              <ColorField
+                label="Background"
+                value={primaryColor ?? "#ffffff"}
+                onChange={onPrimaryColorChange}
+              />
+              <ColorField
+                label="Fluid"
+                value={shaderColor ?? "#ffffff"}
+                onChange={onShaderColorChange}
+              />
+              <ColorField
+                label="Text"
+                value={textColor ?? "#111827"}
+                onChange={onTextColorChange}
+              />
+            </div>
+            <GenerateButton inputProps={inputProps} exportConfig={exportConfig} />
+          </FieldGroup>
         </div>
-      )}
-
-      {inputProps && (
-        <GenerateButton inputProps={inputProps} exportConfig={exportConfig} />
-      )}
+      ) : null}
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }
 
@@ -126,19 +110,21 @@ function ColorField({
   onChange,
 }: {
   label: string;
-  value?: string;
-  onChange: (color: string) => void;
+  value: string;
+  onChange?: (color: string) => void;
 }) {
   return (
-    <Field label={label}>
-      <span className="flex h-9 cursor-pointer items-center gap-2 border border-border bg-background px-2 focus-within:ring-1 focus-within:ring-ring">
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <span className="flex h-9 cursor-pointer items-center gap-2 rounded-sm border border-border bg-background px-2 focus-within:ring-1 focus-within:ring-ring">
         <input
           type="color"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange?.(e.target.value)}
+          aria-label={label}
           className="size-5 shrink-0 cursor-pointer appearance-none border border-border bg-transparent p-0"
         />
-        <span className="font-mono text-[11px] uppercase text-muted-foreground">
+        <span className="truncate font-mono text-[11px] text-muted-foreground">
           {value}
         </span>
       </span>

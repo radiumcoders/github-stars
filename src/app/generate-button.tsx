@@ -1,13 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import type { ExportConfig } from "@/lib/export-config";
 import {
   downloadBlob,
   renderVideoInBrowser,
 } from "@/lib/render-video-browser";
 import { Props } from "@/video/schema";
-import { Download, FileVideo, Loader2 } from "lucide-react";
+import { Download, FileVideo } from "lucide-react";
 import { useRef, useState } from "react";
 
 type State =
@@ -42,13 +43,13 @@ export function GenerateButton({
       <div className="flex w-full flex-col gap-2">
         <Button
           type="button"
-          className="w-full font-mono text-xs uppercase tracking-wider"
+          className="w-full"
           onClick={() => downloadBlob(state.blob, filename)}
         >
           <Download data-icon="inline-start" />
           Download video
         </Button>
-        <p className="text-center font-mono text-[10px] text-muted-foreground">
+        <p className="text-center text-xs text-muted-foreground">
           Rendered on your device. Re-download anytime without re-rendering.
         </p>
       </div>
@@ -62,7 +63,7 @@ export function GenerateButton({
   return (
     <div className="flex w-full flex-col gap-2">
       <Button
-        className="w-full font-mono text-xs uppercase tracking-wider"
+        className="w-full"
         onClick={async () => {
           if (!inputProps) return;
 
@@ -98,8 +99,8 @@ export function GenerateButton({
       >
         {isLoading ? (
           <>
-            <Loader2 data-icon="inline-start" className="animate-spin" />
-            Rendering… {progressPct}%
+            <Spinner data-icon="inline-start" />
+            Rendering {progressPct}%
           </>
         ) : (
           <>
@@ -109,21 +110,19 @@ export function GenerateButton({
         )}
       </Button>
 
-      {state.type === "error" && (
-        <p className="text-center font-mono text-[11px] text-destructive">
-          {state.message}
+      {state.type === "error" ? (
+        <p className="text-center text-xs text-destructive">{state.message}</p>
+      ) : null}
+      {isLoading ? (
+        <p className="text-center text-xs text-muted-foreground">
+          Encoding on your computer. Keep this tab open.
         </p>
-      )}
-      {isLoading && (
-        <p className="text-center font-mono text-[10px] text-muted-foreground">
-          Encoding on your computer — keep this tab open.
-        </p>
-      )}
-      {!isLoading && exportConfig.hint && state.type === "initial" && (
-        <p className="text-center font-mono text-[10px] text-muted-foreground">
+      ) : null}
+      {!isLoading && exportConfig.hint && state.type === "initial" ? (
+        <p className="text-center text-xs text-muted-foreground">
           {exportConfig.hint}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }
