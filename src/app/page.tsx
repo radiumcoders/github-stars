@@ -1,6 +1,5 @@
 import { StarsViewer } from "@/app/stars-viewer";
 import { getExportConfig } from "@/lib/export-config";
-import { normalizeRepoName } from "@/lib/normalize-repo-name";
 
 export default async function Home({
   searchParams,
@@ -8,7 +7,6 @@ export default async function Home({
   searchParams: Promise<{ repository?: string }>;
 }) {
   const { repository = "" } = await searchParams;
-  const initialRepository = normalizeRepoName(repository);
   const exportConfig = getExportConfig();
 
   return (
@@ -21,13 +19,10 @@ export default async function Home({
           Star history, animated.
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Sign in with GitHub, enter one of your repositories, and watch stargazers slide in — export as MP4 right in your browser.
+          Sign in with GitHub, enter a repository, and watch stargazers slide in — export as MP4 right in your browser.
         </p>
       </div>
-      <StarsViewer
-        initialRepository={initialRepository}
-        exportConfig={exportConfig}
-      />
+      <StarsViewer initialRepository={repository} exportConfig={exportConfig} />
     </main>
   );
 }

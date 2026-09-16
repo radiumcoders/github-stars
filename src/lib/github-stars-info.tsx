@@ -57,8 +57,7 @@ function mapError(err: unknown): GithubStarsResult {
 }
 
 export async function getGithubStarsInfo(
-  user: string,
-  repo: string,
+  repository: string,
   token: string,
 ): Promise<GithubStarsResult> {
   const trimmedToken = token.trim();
@@ -71,11 +70,12 @@ export async function getGithubStarsInfo(
     };
   }
 
+  const [user, repo] = repository.split("/");
   if (!user || !repo) {
     return {
       ok: false,
       code: "not_found",
-      message: "Enter a repository name (e.g. github-stars).",
+      message: "Enter a valid owner/repo (e.g. vercel/next.js).",
     };
   }
 
