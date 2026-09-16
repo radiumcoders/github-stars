@@ -12,7 +12,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowRight, LogOut, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -132,13 +131,6 @@ export function RepositoryForm({
         onSubmit(cleanRepository);
       }}
     >
-      <div className="flex flex-col gap-1 px-4 py-4">
-        <h2 className="text-sm font-medium">Project</h2>
-        <p className="text-sm text-muted-foreground">
-          Sign in and choose a repository to preview.
-        </p>
-      </div>
-      <Separator />
       <div className="px-4 py-4">
         <FieldGroup className="gap-4">
           <Field data-invalid={Boolean(authError) || undefined}>
