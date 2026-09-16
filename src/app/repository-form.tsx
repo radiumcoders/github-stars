@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowRight, LogOut } from "lucide-react";
+import { ArrowRight, LogOut, TriangleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -193,6 +194,24 @@ export function RepositoryForm({
                   Use GitHub so we can fetch stargazers for repositories you can
                   access.
                 </FieldDescription>
+                <Alert>
+                  <TriangleAlert />
+                  <AlertTitle>Private repos too</AlertTitle>
+                  <AlertDescription>
+                    GitHub will also ask for access to private repositories. We
+                    only read stargazers for the repo you enter — we don&apos;t
+                    clone, change, or otherwise use them. You can always{" "}
+                    <a
+                      href="https://github.com/radiumcoders/github-stars"
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="font-medium underline underline-offset-2"
+                    >
+                      self-host this app
+                    </a>{" "}
+                    if you&apos;d rather keep that on your machine.
+                  </AlertDescription>
+                </Alert>
                 <Button
                   type="button"
                   variant="outline"
