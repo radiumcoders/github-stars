@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "repository_url": "https://github.com/radiumcoders/github-stars",
+  "delivery_commit": null,
+  "overall_status": "implementation_complete_live_checks_blocked",
+  "summary": "Implemented GitHub App user-token read-only auth, connection flow, pagination repair, typed errors, guarded migrations, unit tests, and owner docs in the owner checkout. Working tree is uncommitted. Live OAuth/avatar/MP4 gates are blocked until the owner registers Apps and provides sandbox credentials.",
+  "commands": [
+    { "command": "pnpm install --no-frozen-lockfile", "status": "passed", "evidence": "Lockfile updated; Better Auth 1.7.5 resolved" },
+    { "command": "pnpm run test", "status": "passed", "evidence": "69 unit tests passed" },
+    { "command": "pnpm run typecheck", "status": "passed", "evidence": "tsc --noEmit" },
+    { "command": "pnpm run lint", "status": "passed", "evidence": "eslint" },
+    { "command": "pnpm run build", "status": "passed", "evidence": "Next.js 16.2.10 production build; /github/setup and /api/github/* present" },
+    { "command": "pnpm run check:env", "status": "blocked", "evidence": "No owner .env.local in this session" },
+    { "command": "pnpm run test:e2e", "status": "passed", "evidence": "Chromium signed-out homepage: read-only copy, Generate disabled" },
+    { "command": "pnpm run auth:migrate --dry-run", "status": "not_run", "evidence": "Requires owner database target" },
+    { "command": "pnpm run auth:retire-legacy --dry-run", "status": "not_run", "evidence": "Requires owner legacy Client ID/Secret and database" }
+  ],
+  "tasks": [
+    { "id": "T01", "status": "completed", "evidence": ["HEAD 3e5e66ff; remotes radiumcoders/github-stars; no reset"] },
+    { "id": "T02", "status": "completed", "evidence": ["pnpm 9.15.9 pinned; Better Auth 1.7.5; Node >=22"] },
+    { "id": "T03", "status": "completed", "evidence": ["src/lib/github-app-config.ts", "src/lib/auth-options.ts"] },
+    { "id": "T04", "status": "completed", "evidence": ["GITHUB_SOCIAL_PROVIDER empty scopes; request-level scope hook"] },
+    { "id": "T05", "status": "completed", "evidence": ["getAccessToken body.accountId uses local account row id"] },
+    { "id": "T06", "status": "completed", "evidence": ["encryptOAuthTokens; blocked HTTP token paths"] },
+    { "id": "T07", "status": "completed", "evidence": ["checkGithubToken against configured Client ID"] },
+    { "id": "T08", "status": "completed", "evidence": ["in-process + pg_advisory_lock around refresh"] },
+    { "id": "T09", "status": "completed", "evidence": ["src/lib/github-connection.ts user-scoped discovery"] },
+    { "id": "T10", "status": "completed", "evidence": ["/api/github/install and /github/setup"] },
+    { "id": "T11", "status": "completed", "evidence": ["fetchAuthorizedGithubStars revalidates access"] },
+    { "id": "T12", "status": "completed", "evidence": ["pagination tests 0/1/50/100/101/150/200/201"] },
+    { "id": "T13", "status": "completed", "evidence": ["src/lib/github-errors.ts"] },
+    { "id": "T14", "status": "completed", "evidence": ["repository-form connect/manage/refresh states"] },
+    { "id": "T15", "status": "completed", "evidence": ["explicit count-only; resolveInputProps empty avatars"] },
+    { "id": "T16", "status": "completed", "evidence": ["scripts/auth-migrate.mjs dry-run/apply"] },
+    { "id": "T17", "status": "completed", "evidence": ["scripts/auth-retire-legacy.mjs"] },
+    { "id": "T18", "status": "completed", "evidence": [".env.example", "docs/05-MIGRATION-AND-DEPLOYMENT.md"] },
+    { "id": "T19", "status": "completed", "evidence": ["tests/*.test.ts 69 passed"] },
+    { "id": "T20", "status": "completed", "evidence": ["e2e/home.spec.ts; production build passed; live export blocked"] },
+    { "id": "T21", "status": "blocked", "evidence": ["Owner GitHub App sandbox required"] },
+    { "id": "T22", "status": "blocked", "evidence": ["Owner GitHub App sandbox required"] },
+    { "id": "T23", "status": "completed", "evidence": ["README.md", "docs/", "AGENT-COMPLETION-REPORT.md"] },
+    { "id": "T24", "status": "completed", "evidence": ["Uncommitted reviewable diff; docs/PR-DESCRIPTION.md; no push"] }
+  ],
+  "acceptance": [
+    { "id": "G01", "status": "blocked", "evidence": ["Needs live consent screenshot"] },
+    { "id": "G02", "status": "passed", "evidence": ["Code and unit tests; live App settings still owner-reviewed"] },
+    { "id": "G03", "status": "blocked", "evidence": ["Needs live OAuth"] },
+    { "id": "G04", "status": "passed", "evidence": ["accountId local row + token check against Client ID"] },
+    { "id": "G05", "status": "passed", "evidence": ["encryptOAuthTokens; HTTP token routes 404"] },
+    { "id": "G06", "status": "blocked", "evidence": ["Concurrency lock implemented; live refresh not observed"] },
+    { "id": "G07", "status": "passed", "evidence": ["resolveAuthorizedRepository"] },
+    { "id": "G08", "status": "passed", "evidence": ["setup rediscovers; installation_id not sufficient"] },
+    { "id": "G09", "status": "blocked", "evidence": ["Needs live uninstall test"] },
+    { "id": "G10", "status": "passed", "evidence": ["pagination unit tests"] },
+    { "id": "G11", "status": "passed", "evidence": ["classifyGithubError tests"] },
+    { "id": "G12", "status": "passed", "evidence": ["UI preserved; account switch clears results"] },
+    { "id": "G13", "status": "passed", "evidence": ["count-only explicit; no fixture fallback"] },
+    { "id": "G14", "status": "blocked", "evidence": ["Needs live MP4"] },
+    { "id": "G15", "status": "blocked", "evidence": ["Needs live private repo"] },
+    { "id": "G16", "status": "blocked", "evidence": ["Needs second account"] },
+    { "id": "G17", "status": "passed", "evidence": ["preset empty-avatar unit tests; build passed"] },
+    { "id": "G18", "status": "passed", "evidence": ["migrate/retire default dry-run and confirm-target"] },
+    { "id": "G19", "status": "blocked", "evidence": ["Owner must run retirement against intended DB"] },
+    { "id": "G20", "status": "passed", "evidence": ["lint/typecheck/test/build recorded"] },
+    { "id": "G21", "status": "passed", "evidence": ["docs match implemented commands"] },
+    { "id": "G22", "status": "passed", "evidence": ["reviewable uncommitted diff; no unauthorized publish"] },
+    { "id": "G23", "status": "not_run", "evidence": ["Owner approval required"] }
+  ],
+  "owner_actions": [
+    {
+      "action": "Register development and production GitHub Apps with Metadata read and Email read only; set callback /api/auth/callback/github and setup /github/setup",
+      "reason": "Code cannot create Apps or prove consent screens",
+      "requires_approval": true
+    },
+    {
+      "action": "Place secrets in .env.local / host secret store and run pnpm run check:env",
+      "reason": "Environment validator does not invent credentials",
+      "requires_approval": true
+    },
+    {
+      "action": "Review and run auth:migrate / auth:retire-legacy against the intended database",
+      "reason": "Destructive apply requires --confirm-target",
+      "requires_approval": true
+    },
+    {
+      "action": "Perform live read-only consent, avatar, and MP4 tests, then approve commit/PR/deploy separately",
+      "reason": "Live gates G14–G16 and G23",
+      "requires_approval": true
+    }
+  ],
+  "security": {
+    "no_write_permission_verified": false,
+    "secrets_excluded_from_artifacts": true,
+    "live_checks_observed": false,
+    "notes": "Code requests no runtime OAuth scopes and rejects extra permissions on installations. Live App registration and consent screens have not been observed. no_write_permission_verified stays false until the owner reviews the real GitHub App settings."
+  }
+}

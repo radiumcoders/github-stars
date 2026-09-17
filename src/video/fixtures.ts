@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 export const bookPrStargazers = [
   {
     login: 'glenux',

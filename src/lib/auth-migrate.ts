@@ -1,32 +1,17 @@
 import { betterAuth } from "better-auth";
-import { createAuthDatabase } from "@/lib/auth-db";
+import { createSharedAuthOptions } from "@/lib/auth-options";
+import { tryLoadGithubAppConfig } from "@/lib/github-app-config";
 
-const database = createAuthDatabase();
+const loaded = tryLoadGithubAppConfig();
 
-if (!database) {
-  throw new Error("Set DATABASE_URL before running auth:migrate.");
+if (!loaded.ok) {
+  throw new Error(
+    "Set a valid GitHub App environment before running auth:migrate. Run pnpm run check:env.",
+  );
 }
 
 /**
- * Config used only by `npm run auth:migrate`.
- * Keep social providers / scopes in sync with `src/lib/auth.ts`.
+ * Config used only by `pnpm run auth:migrate`.
+ * Same provider/schema options as runtime, without Next.js cookie plugins.
  */
-export const auth = betterAuth({
-  database,
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-      scope: ["read:user", "user:email", "repo"],
-    },
-  },
-  account: {
-    accountLinking: {
-      enabled: true,
-      trustedProviders: ["github"],
-    },
-    updateAccountOnSignIn: true,
-  },
-});
+export const auth = betterAuth(createSharedAuthOptions(loaded.config));

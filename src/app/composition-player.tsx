@@ -7,7 +7,8 @@ import {
   height,
   width,
 } from "@/video/composition";
-import { Props, defaultProps } from "@/video/schema";
+import { resolveInputProps } from "@/lib/video-props";
+import { Props } from "@/video/schema";
 import useSize from "@react-hook/size";
 import { Player } from "@remotion/player";
 import { useRef, type RefObject } from "react";
@@ -30,7 +31,7 @@ export function CompositionPlayer({
           compositionHeight={height}
           fps={fps}
           durationInFrames={(animationDurationInSeconds + 1) * fps}
-          inputProps={{ ...defaultProps, ...inputProps }}
+          inputProps={resolveInputProps(inputProps)}
           controls
           loop
           showVolumeControls={false}

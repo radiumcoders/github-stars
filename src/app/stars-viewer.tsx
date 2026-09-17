@@ -1,7 +1,7 @@
 "use client";
 
 import { fetchGithubStars } from "@/app/actions";
-import { RepositoryForm } from "@/app/repository-form";
+import { RepositoryForm, type RepositorySelection } from "@/app/repository-form";
 import { ResultCard } from "@/app/result-card";
 import { StarLogo } from "@/components/star-logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -28,8 +28,7 @@ import {
 import { Props } from "@/video/schema";
 import { AlertCircle, ExternalLink } from "lucide-react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const CompositionPlayer = dynamic(
   () =>
@@ -45,6 +44,29 @@ const CompositionPlayer = dynamic(
   },
 );
 
+function errorTitle(code: GithubStarsResult extends { ok: false } ? GithubStarsResult["code"] : string) {
+  switch (code) {
+    case "missing_token":
+    case "reconnect_required":
+      return "Reconnect GitHub";
+    case "not_configured":
+      return "GitHub connection is unavailable";
+    case "install_required":
+      return "Connect repositories";
+    case "stargazers_unavailable":
+      return "Stargazer avatars are unavailable";
+    case "rate_limited":
+      return "GitHub request limit reached";
+    case "forbidden":
+      return "Repository unavailable";
+    case "not_found":
+    case "repository_unavailable":
+      return "Repository unavailable";
+    default:
+      return "Could not load repository";
+  }
+}
+
 export function StarsViewer({
   initialRepository,
   exportConfig,
@@ -59,6 +81,8 @@ export function StarsViewer({
   const [primaryColor, setPrimaryColor] = useState(defaultPrimaryColor);
   const [shaderColor, setShaderColor] = useState(defaultShaderColor);
   const [textColor, setTextColor] = useState(defaultTextColor);
+  const [lastSelection, setLastSelection] = useState<RepositorySelection | null>(null);
+  const requestId = useRef(0);
 
   const handlePresetChange = useCallback((next: PresetId) => {
     setPreset(next);
@@ -68,24 +92,38 @@ export function StarsViewer({
     setTextColor(colors.text);
   }, []);
 
-  const handleSubmit = useCallback(async (repo: string) => {
-    setRepository(repo);
+  const handleSessionUserChange = useCallback((userId: string | null) => {
+    requestId.current += 1;
+    setResult(null);
+    setLoading(false);
+    if (!userId) {
+      setRepository("");
+      setLastSelection(null);
+    }
+  }, []);
+
+  const runFetch = useCallback(async (selection: RepositorySelection, countOnly = false) => {
+    setLastSelection(selection);
+    setRepository(selection.repository);
     setLoading(true);
+    const current = ++requestId.current;
     setResult(null);
     try {
-      const data = await fetchGithubStars(repo);
+      const data = await fetchGithubStars(selection.repository, {
+        repositoryId: selection.repositoryId,
+        countOnly,
+      });
+      if (current !== requestId.current) return;
       setResult(data);
-    } catch (err) {
+    } catch {
+      if (current !== requestId.current) return;
       setResult({
         ok: false,
         code: "unknown",
-        message:
-          err instanceof Error
-            ? err.message
-            : "Failed to fetch repository data.",
+        message: "Could not read GitHub data. Try again later.",
       });
     } finally {
-      setLoading(false);
+      if (current === requestId.current) setLoading(false);
     }
   }, []);
 
@@ -142,8 +180,9 @@ export function StarsViewer({
         <aside className="flex w-full shrink-0 flex-col border-b border-border lg:w-80 lg:border-b-0 lg:border-r">
           <RepositoryForm
             initialRepository={repository}
-            onSubmit={handleSubmit}
+            onSubmit={(selection) => void runFetch(selection)}
             loading={loading}
+            onSessionUserChange={handleSessionUserChange}
           />
           <p className="mt-auto border-t border-border px-4 py-3 text-[11px] text-muted-foreground">
             Not endorsed or affiliated with GitHub.
@@ -189,37 +228,43 @@ export function StarsViewer({
             <div className="flex size-full flex-col items-center justify-center gap-4 p-6">
               <Alert variant="destructive" className="max-w-md">
                 <AlertCircle />
-                <AlertTitle>
-                  {result.code === "missing_token"
-                    ? "GitHub authorization required"
-                    : result.code === "forbidden"
-                      ? "Access denied"
-                      : "Could not load repository"}
-                </AlertTitle>
-                <AlertDescription>{result.message}</AlertDescription>
+                <AlertTitle>{errorTitle(result.code)}</AlertTitle>
+                <AlertDescription>
+                  {result.message}
+                  {result.code === "rate_limited" && result.retryAt
+                    ? ` Retry after ${new Date(result.retryAt).toLocaleTimeString()}.`
+                    : null}
+                </AlertDescription>
               </Alert>
-              {result.code === "not_found" ? (
-                <Image
-                  src="/lost.gif"
-                  alt=""
-                  width={198}
-                  height={187}
-                  className="opacity-80"
-                />
+              {result.code === "stargazers_unavailable" && lastSelection ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void runFetch(lastSelection, true)}
+                >
+                  Create count-only video
+                </Button>
               ) : null}
             </div>
           ) : null}
 
           {!loading && result?.ok === true ? (
-            <CompositionPlayer
-              inputProps={{
-                ...result.data,
-                preset,
-                primaryColor,
-                shaderColor,
-                textColor,
-              }}
-            />
+            <div className="flex size-full flex-col">
+              {result.mode === "count_only" ? (
+                <p className="border-b border-border px-4 py-2 text-center text-xs text-muted-foreground">
+                  Count-only video: star count is shown without stargazer avatars.
+                </p>
+              ) : null}
+              <CompositionPlayer
+                inputProps={{
+                  ...result.data,
+                  preset,
+                  primaryColor,
+                  shaderColor,
+                  textColor,
+                }}
+              />
+            </div>
           ) : null}
 
           {!loading && result === null ? (
@@ -230,7 +275,7 @@ export function StarsViewer({
                 </EmptyMedia>
                 <EmptyTitle>No preview yet</EmptyTitle>
                 <EmptyDescription>
-                  Sign in and generate a repository to fill this stage.
+                  Sign in, connect a repository, and generate a preview.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>

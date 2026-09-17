@@ -5,6 +5,7 @@ import {
   height,
   width,
 } from "@/video/composition";
+import { resolveInputProps } from "@/lib/video-props";
 import { defaultProps, type Props } from "@/video/schema";
 import {
   canRenderMediaOnWeb,
@@ -59,7 +60,7 @@ export async function renderVideoInBrowser(
 ): Promise<Blob> {
   await assertBrowserExportSupported();
 
-  const props: Props = { ...defaultProps, ...inputProps };
+  const props: Props = resolveInputProps(inputProps);
 
   const { getBlob } = await renderMediaOnWeb({
     composition: {

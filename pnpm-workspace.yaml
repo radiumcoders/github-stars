@@ -1,4 +1,10 @@
+packages:
+  - "."
+
 allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+overrides:
+  better-auth: 1.7.5

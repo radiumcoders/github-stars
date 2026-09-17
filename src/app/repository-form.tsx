@@ -1,6 +1,7 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
+import type { ConnectedRepository } from "@/lib/github-types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,11 +14,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowRight, LogOut, TriangleAlert } from "lucide-react";
+import { ArrowRight, LogOut, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-/** Brand mark (lucide no longer ships GitHub icons). */
 function GitHubMark({ className }: { className?: string }) {
   return (
     <svg
@@ -48,23 +48,103 @@ function userInitials(name: string | null | undefined) {
     .toUpperCase();
 }
 
+export type RepositorySelection = {
+  repository: string;
+  repositoryId?: number;
+};
+
 export function RepositoryForm({
   initialRepository,
   onSubmit,
   loading,
+  onSessionUserChange,
 }: {
   initialRepository: string;
-  onSubmit: (repository: string) => void;
+  onSubmit: (selection: RepositorySelection) => void;
   loading?: boolean;
+  onSessionUserChange?: (userId: string | null) => void;
 }) {
   const router = useRouter();
   const { data: session, isPending, refetch } = authClient.useSession();
   const [repository, setRepository] = useState(initialRepository);
+  const [repositoryId, setRepositoryId] = useState<number | undefined>();
   const [signingIn, setSigningIn] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [configured, setConfigured] = useState(true);
+  const [repositories, setRepositories] = useState<ConnectedRepository[]>([]);
+  const [manageUrl, setManageUrl] = useState<string | null>(null);
 
   const isAuthenticated = Boolean(session?.user);
+  const userId = session?.user?.id ?? null;
+
+  useEffect(() => {
+    onSessionUserChange?.(userId);
+  }, [onSessionUserChange, userId]);
+
+  const loadConnection = useCallback(async () => {
+    if (!userId) return;
+    setRefreshing(true);
+    try {
+      const response = await fetch("/api/github/connection", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+        configured?: boolean;
+        repositories?: ConnectedRepository[];
+        manageUrl?: string;
+      } | null;
+      if (!response.ok) {
+        setAuthError(data?.error || "Could not load connected repositories.");
+        return;
+      }
+      setConfigured(data?.configured !== false);
+      setRepositories(Array.isArray(data?.repositories) ? data.repositories : []);
+      setManageUrl(typeof data?.manageUrl === "string" ? data.manageUrl : null);
+      setAuthError(null);
+    } catch {
+      setAuthError("Could not load connected repositories.");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const controller = new AbortController();
+    fetch("/api/github/connection", {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = (await response.json().catch(() => null)) as {
+          error?: string;
+          configured?: boolean;
+          repositories?: ConnectedRepository[];
+          manageUrl?: string;
+        } | null;
+        if (controller.signal.aborted) return;
+        if (!response.ok) {
+          setAuthError(data?.error || "Could not load connected repositories.");
+          return;
+        }
+        setConfigured(data?.configured !== false);
+        setRepositories(Array.isArray(data?.repositories) ? data.repositories : []);
+        setManageUrl(typeof data?.manageUrl === "string" ? data.manageUrl : null);
+        setAuthError(null);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setAuthError("Could not load connected repositories.");
+      });
+    return () => controller.abort();
+  }, [userId]);
 
   async function handleSignOut() {
     setAuthError(null);
@@ -118,17 +198,50 @@ export function RepositoryForm({
     }
   }
 
+  async function handleConnect() {
+    setAuthError(null);
+    setConnecting(true);
+    try {
+      const response = await fetch("/api/github/install", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await response.json().catch(() => null)) as {
+        url?: string;
+        error?: string;
+      } | null;
+      if (!response.ok || typeof data?.url !== "string") {
+        setAuthError(data?.error || "Could not start repository connection.");
+        setConnecting(false);
+        return;
+      }
+      const url = new URL(data.url);
+      if (url.origin !== "https://github.com") {
+        setAuthError("Unexpected install URL.");
+        setConnecting(false);
+        return;
+      }
+      window.location.assign(url.toString());
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Could not start repository connection.");
+      setConnecting(false);
+    }
+  }
+
+  const connected = repositories.length > 0;
+  const canGenerate = isAuthenticated && connected && !isPending;
+
   return (
     <form
       className="flex flex-col"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!isAuthenticated) return;
-        const cleanRepository = repository
-          .trim()
-          .replace(/^(https?:\/\/)?github.com\//, "");
-        setRepository(cleanRepository);
-        onSubmit(cleanRepository);
+        if (!canGenerate) return;
+        const selected = repositories.find((row) => row.fullName === repository);
+        onSubmit({
+          repository: selected?.fullName ?? repository.trim(),
+          repositoryId: selected?.id ?? repositoryId,
+        });
       }}
     >
       <div className="px-4 py-4">
@@ -183,27 +296,9 @@ export function RepositoryForm({
             ) : (
               <>
                 <FieldDescription>
-                  Use GitHub so we can fetch stargazers for repositories you can
-                  access.
+                  Sign in with GitHub — read-only access. We do not request
+                  permission to edit your repositories.
                 </FieldDescription>
-                <Alert>
-                  <TriangleAlert />
-                  <AlertTitle>Private repos too</AlertTitle>
-                  <AlertDescription>
-                    GitHub will also ask for access to private repositories. We
-                    only read stargazers for the repo you enter — we don&apos;t
-                    clone, change, or otherwise use them. You can always{" "}
-                    <a
-                      href="https://github.com/radiumcoders/github-stars"
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="font-medium underline underline-offset-2"
-                    >
-                      self-host this app
-                    </a>{" "}
-                    if you&apos;d rather keep that on your machine.
-                  </AlertDescription>
-                </Alert>
                 <Button
                   type="button"
                   variant="outline"
@@ -227,29 +322,121 @@ export function RepositoryForm({
             {authError ? <FieldError>{authError}</FieldError> : null}
           </Field>
 
+          {isAuthenticated && !configured ? (
+            <Alert>
+              <AlertTitle>GitHub connection is unavailable</AlertTitle>
+              <AlertDescription>
+                The service owner needs to finish configuration.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {isAuthenticated && configured ? (
+            <Field>
+              <FieldLabel>Repository access</FieldLabel>
+              {connected ? (
+                <FieldDescription>
+                  Connected with read-only access. Choose a repository and
+                  generate your video.
+                </FieldDescription>
+              ) : (
+                <FieldDescription>
+                  Choose the repositories this service can use. No source-code
+                  access or write permission is requested.
+                </FieldDescription>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={connecting}
+                  onClick={handleConnect}
+                >
+                  {connecting ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <GitHubMark data-icon="inline-start" />
+                  )}
+                  {connected ? "Connect more" : "Connect repositories"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={refreshing}
+                  onClick={() => void loadConnection()}
+                >
+                  {refreshing ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <RefreshCw data-icon="inline-start" />
+                  )}
+                  Refresh
+                </Button>
+                {manageUrl ? (
+                  <Button type="button" variant="ghost" size="sm" asChild>
+                    <a href={manageUrl} target="_blank" rel="noreferrer noopener">
+                      Manage access
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
+            </Field>
+          ) : null}
+
           <Field>
             <FieldLabel htmlFor="repository">Repository</FieldLabel>
-            <Input
-              id="repository"
-              name="repository"
-              placeholder="owner/repo"
-              className="font-mono"
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              enterKeyHint="go"
-              required
-              disabled={!isAuthenticated || isPending}
-              value={repository}
-              onChange={(event) => setRepository(event.target.value)}
-            />
+            {connected ? (
+              <select
+                id="repository"
+                name="repository"
+                className="h-9 w-full rounded-sm border border-input bg-background px-2 font-mono text-sm"
+                disabled={!isAuthenticated || isPending || loading}
+                value={repository}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  const selected = repositories.find((row) => row.fullName === next);
+                  setRepository(next);
+                  setRepositoryId(selected?.id);
+                }}
+              >
+                <option value="">Select a connected repository</option>
+                {repositories.map((row) => (
+                  <option key={row.id} value={row.fullName}>
+                    {row.fullName}
+                    {row.private ? " (private)" : ""}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Input
+                id="repository"
+                name="repository"
+                placeholder="owner/repo"
+                className="font-mono"
+                autoCapitalize="off"
+                autoComplete="off"
+                autoCorrect="off"
+                enterKeyHint="go"
+                disabled
+                value={repository}
+                onChange={(event) => setRepository(event.target.value)}
+              />
+            )}
+            {!connected && isAuthenticated ? (
+              <FieldDescription>
+                No connected repositories yet. Connect a repository or check
+                whether an administrator still needs to approve your request.
+              </FieldDescription>
+            ) : null}
           </Field>
         </FieldGroup>
       </div>
       <div className="px-4 pb-4">
         <Button
           type="submit"
-          disabled={loading || !isAuthenticated || isPending}
+          disabled={loading || !canGenerate || !repository}
           className="w-full"
         >
           {loading ? (
