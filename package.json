@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/environment.test.ts tests/permissions.test.ts tests/github-data.test.ts tests/auth-security.test.ts tests/presets.test.ts",
+    "test": "tsx --test tests/environment.test.ts tests/permissions.test.ts tests/github-data.test.ts tests/auth-security.test.ts tests/presets.test.ts tests/github-setup.test.ts",
     "test:e2e": "playwright test",
     "check:env": "tsx scripts/check-env.mjs",
     "remotion-studio": "remotion studio src/video/index.ts",
