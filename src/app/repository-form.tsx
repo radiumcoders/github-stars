@@ -74,6 +74,8 @@ export function RepositoryForm({
   const [refreshing, setRefreshing] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [configured, setConfigured] = useState(true);
+  const [allowManualRepository, setAllowManualRepository] = useState(false);
+  const [configIssues, setConfigIssues] = useState<string[]>([]);
   const [repositories, setRepositories] = useState<ConnectedRepository[]>([]);
   const [manageUrl, setManageUrl] = useState<string | null>(null);
 
@@ -95,6 +97,8 @@ export function RepositoryForm({
       const data = (await response.json().catch(() => null)) as {
         error?: string;
         configured?: boolean;
+        allowManualRepository?: boolean;
+        issues?: string[];
         repositories?: ConnectedRepository[];
         manageUrl?: string;
       } | null;
@@ -103,6 +107,8 @@ export function RepositoryForm({
         return;
       }
       setConfigured(data?.configured !== false);
+      setAllowManualRepository(data?.allowManualRepository === true);
+      setConfigIssues(Array.isArray(data?.issues) ? data.issues : []);
       setRepositories(Array.isArray(data?.repositories) ? data.repositories : []);
       setManageUrl(typeof data?.manageUrl === "string" ? data.manageUrl : null);
       setAuthError(null);
@@ -125,6 +131,8 @@ export function RepositoryForm({
         const data = (await response.json().catch(() => null)) as {
           error?: string;
           configured?: boolean;
+          allowManualRepository?: boolean;
+          issues?: string[];
           repositories?: ConnectedRepository[];
           manageUrl?: string;
         } | null;
@@ -134,6 +142,8 @@ export function RepositoryForm({
           return;
         }
         setConfigured(data?.configured !== false);
+        setAllowManualRepository(data?.allowManualRepository === true);
+        setConfigIssues(Array.isArray(data?.issues) ? data.issues : []);
         setRepositories(Array.isArray(data?.repositories) ? data.repositories : []);
         setManageUrl(typeof data?.manageUrl === "string" ? data.manageUrl : null);
         setAuthError(null);
@@ -229,7 +239,9 @@ export function RepositoryForm({
   }
 
   const connected = repositories.length > 0;
-  const canGenerate = isAuthenticated && connected && !isPending;
+  const canPickRepository = connected || allowManualRepository;
+  const canGenerate = isAuthenticated && canPickRepository && !isPending;
+  const showAppInstall = isAuthenticated && configured && !allowManualRepository;
 
   return (
     <form
@@ -326,12 +338,24 @@ export function RepositoryForm({
             <Alert>
               <AlertTitle>GitHub connection is unavailable</AlertTitle>
               <AlertDescription>
-                The service owner needs to finish configuration.
+                {configIssues.length > 0
+                  ? configIssues.join(" ")
+                  : "The service owner needs to finish configuration. After changing Vercel env vars, redeploy the app."}
               </AlertDescription>
             </Alert>
           ) : null}
 
-          {isAuthenticated && configured ? (
+          {isAuthenticated && configured && allowManualRepository && configIssues.length > 0 ? (
+            <Alert>
+              <AlertTitle>GitHub App is not fully configured</AlertTitle>
+              <AlertDescription>
+                You can still enter a public owner/repo. To connect private
+                repositories, fix: {configIssues.join(" ")}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {showAppInstall ? (
             <Field>
               <FieldLabel>Repository access</FieldLabel>
               {connected ? (
@@ -387,7 +411,7 @@ export function RepositoryForm({
 
           <Field>
             <FieldLabel htmlFor="repository">Repository</FieldLabel>
-            {connected ? (
+            {connected && !allowManualRepository ? (
               <select
                 id="repository"
                 name="repository"
@@ -419,12 +443,29 @@ export function RepositoryForm({
                 autoComplete="off"
                 autoCorrect="off"
                 enterKeyHint="go"
-                disabled
+                list={allowManualRepository && repositories.length > 0 ? "connected-repositories" : undefined}
+                disabled={!isAuthenticated || isPending || loading || !canPickRepository}
                 value={repository}
-                onChange={(event) => setRepository(event.target.value)}
+                onChange={(event) => {
+                  setRepository(event.target.value);
+                  setRepositoryId(undefined);
+                }}
               />
             )}
-            {!connected && isAuthenticated ? (
+            {allowManualRepository && repositories.length > 0 ? (
+              <datalist id="connected-repositories">
+                {repositories.map((row) => (
+                  <option key={row.id} value={row.fullName} />
+                ))}
+              </datalist>
+            ) : null}
+            {allowManualRepository && isAuthenticated ? (
+              <FieldDescription>
+                Enter owner/repo. Public repositories work with read-only
+                sign-in.
+              </FieldDescription>
+            ) : null}
+            {!connected && isAuthenticated && !allowManualRepository ? (
               <FieldDescription>
                 No connected repositories yet. Connect a repository or check
                 whether an administrator still needs to approve your request.

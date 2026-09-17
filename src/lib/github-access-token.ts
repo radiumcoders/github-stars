@@ -3,7 +3,7 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getAuthDatabase } from "@/lib/auth-db";
 import { getAuth } from "@/lib/auth";
-import { tryLoadGithubAppConfig } from "@/lib/github-app-config";
+import { tryLoadAuthConfig } from "@/lib/github-app-config";
 import { GithubAppError, sanitizeLogMeta } from "@/lib/github-errors";
 
 const GITHUB_API = "https://api.github.com";
@@ -171,7 +171,7 @@ export async function resolveGithubAccount(
 export async function getVerifiedGithubAccessToken(
   requestHeaders: Headers,
 ): Promise<{ token: string; account: GithubAccountContext }> {
-  const loaded = tryLoadGithubAppConfig();
+  const loaded = tryLoadAuthConfig();
   if (!loaded.ok) {
     throw new GithubAppError("not_configured", "GitHub connection is unavailable.");
   }

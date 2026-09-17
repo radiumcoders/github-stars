@@ -14,4 +14,22 @@ export type ConnectionStatus = {
   manageUrl: string | null;
   repositoryCount: number;
   repositories: ConnectedRepository[];
+  allowManualRepository: boolean;
+  issues: string[];
 };
+
+export function connectionStatus(overrides: Partial<ConnectionStatus> = {}): ConnectionStatus {
+  return {
+    configured: false,
+    connected: false,
+    pending: false,
+    appSlug: null,
+    installUrl: null,
+    manageUrl: null,
+    repositoryCount: 0,
+    repositories: [],
+    allowManualRepository: false,
+    issues: [],
+    ...overrides,
+  };
+}

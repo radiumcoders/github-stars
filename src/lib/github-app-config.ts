@@ -34,8 +34,6 @@ const AUTH_REQUIRED_KEYS = [
 
 const APP_REQUIRED_KEYS = ["GITHUB_APP_ID", "GITHUB_APP_SLUG"] as const;
 
-const ORIGIN_KEYS = ["BETTER_AUTH_URL", "NEXT_PUBLIC_BASE_URL"] as const;
-
 const PUBLIC_SECRET_NAME =
   /^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|DATABASE|PRIVATE_KEY|PRIVATE)/i;
 
@@ -70,6 +68,25 @@ function looksLikePlaceholder(value: string): boolean {
   return /^(YOUR_|CHANGE_ME|TODO|REPLACE|PLACEHOLDER)/i.test(value);
 }
 
+function normalizeAppSlug(raw: string): string {
+  const value = raw.trim();
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    const match = url.pathname.match(/^\/apps\/([a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?)\/?$/i);
+    if ((url.hostname === "github.com" || url.hostname === "www.github.com") && match) {
+      return match[1];
+    }
+  } catch {
+    // Keep the raw slug when this is not a URL.
+  }
+  return value;
+}
+
+function readSlug(env: EnvMap): string {
+  return normalizeAppSlug(read(env, "GITHUB_APP_SLUG"));
+}
+
 function originsEquivalent(left: URL, right: URL, mode: string): boolean {
   if (left.origin === right.origin) return true;
   if (mode !== "development") return false;
@@ -94,7 +111,6 @@ export function detectMode(env: EnvMap = process.env): EnvironmentMode | "invali
 function collectOriginIssues(
   env: EnvMap,
   mode: EnvironmentMode,
-  requireBothOrigins: boolean,
 ): { issues: string[]; origin: URL | null } {
   const issues: string[] = [];
   const authUrl = originFrom(read(env, "BETTER_AUTH_URL"));
@@ -118,11 +134,7 @@ function collectOriginIssues(
   originIssues("BETTER_AUTH_URL", authUrl, read(env, "BETTER_AUTH_URL"));
   originIssues("NEXT_PUBLIC_BASE_URL", publicUrl, read(env, "NEXT_PUBLIC_BASE_URL"));
 
-  if (requireBothOrigins) {
-    for (const key of ORIGIN_KEYS) {
-      if (!read(env, key)) issues.push(`${key} is required.`);
-    }
-  } else if (!read(env, "BETTER_AUTH_URL") && !read(env, "NEXT_PUBLIC_BASE_URL") && mode !== "development") {
+  if (!read(env, "BETTER_AUTH_URL") && !read(env, "NEXT_PUBLIC_BASE_URL") && mode !== "development") {
     issues.push("BETTER_AUTH_URL or NEXT_PUBLIC_BASE_URL is required.");
   }
 
@@ -203,7 +215,7 @@ export function checkEnvironment(
     }
   }
 
-  const slug = read(env, "GITHUB_APP_SLUG");
+  const slug = readSlug(env);
   if (slug && !/^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/i.test(slug)) {
     issues.push("GITHUB_APP_SLUG must be the App slug, not a URL.");
   }
@@ -213,7 +225,7 @@ export function checkEnvironment(
     issues.push("GITHUB_CLIENT_SECRET looks like a placeholder.");
   }
 
-  const originCheck = collectOriginIssues(env, mode, requireGithubApp);
+  const originCheck = collectOriginIssues(env, mode);
   issues.push(...originCheck.issues);
 
   const databaseUrl = read(env, "DATABASE_URL");
@@ -303,7 +315,7 @@ export function tryLoadGithubAppConfig(
     config: {
       ...authConfigFromEnv(env, mode),
       githubAppId: Number(read(env, "GITHUB_APP_ID")),
-      githubAppSlug: read(env, "GITHUB_APP_SLUG"),
+      githubAppSlug: readSlug(env),
       policy: EXPECTED_POLICY,
     },
   };

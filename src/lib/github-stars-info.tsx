@@ -226,23 +226,21 @@ export async function fetchAuthorizedGithubStars(options: {
   repositoryId?: number;
   countOnly?: boolean;
 }): Promise<GithubStarsResult> {
-  const loaded = tryLoadGithubAppConfig();
-  if (!loaded.ok) {
-    return {
-      ok: false,
-      code: "not_configured",
-      message: userMessageFor("not_configured"),
-    };
-  }
   try {
     const { token } = await getVerifiedGithubAccessToken(options.requestHeaders);
-    const authorized = await resolveAuthorizedRepository({
-      token,
-      config: loaded.config,
-      repository: options.repository,
-      repositoryId: options.repositoryId,
-    });
-    return getGithubStarsInfo(authorized.fullName, token, {
+    const loaded = tryLoadGithubAppConfig();
+    if (loaded.ok) {
+      const authorized = await resolveAuthorizedRepository({
+        token,
+        config: loaded.config,
+        repository: options.repository,
+        repositoryId: options.repositoryId,
+      });
+      return getGithubStarsInfo(authorized.fullName, token, {
+        countOnly: options.countOnly,
+      });
+    }
+    return getGithubStarsInfo(options.repository, token, {
       countOnly: options.countOnly,
     });
   } catch (error) {

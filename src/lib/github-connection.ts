@@ -3,6 +3,7 @@ import "server-only";
 import {
   githubInstallUrl,
   githubManageInstallUrl,
+  tryLoadAuthConfig,
   tryLoadGithubAppConfig,
   type GithubAppConfig,
 } from "@/lib/github-app-config";
@@ -12,7 +13,11 @@ import {
   getVerifiedGithubAccessToken,
   type GithubAccountContext,
 } from "@/lib/github-access-token";
-import type { ConnectedRepository, ConnectionStatus } from "@/lib/github-types";
+import {
+  connectionStatus,
+  type ConnectedRepository,
+  type ConnectionStatus,
+} from "@/lib/github-types";
 import {
   createInstallState,
   INSTALL_STATE_COOKIE,
@@ -196,32 +201,29 @@ export async function getConnectionStatus(
 ): Promise<ConnectionStatus> {
   const loaded = tryLoadGithubAppConfig();
   if (!loaded.ok) {
-    return {
-      configured: false,
-      connected: false,
-      pending: false,
-      appSlug: null,
-      installUrl: null,
-      manageUrl: null,
-      repositoryCount: 0,
-      repositories: [],
-    };
+    if (!tryLoadAuthConfig().ok) {
+      return connectionStatus({ issues: loaded.check.issues });
+    }
+    return connectionStatus({
+      configured: true,
+      allowManualRepository: true,
+      issues: loaded.check.issues,
+    });
   }
   const { token } = await getVerifiedGithubAccessToken(requestHeaders);
   const repositories = await listAuthorizedRepositories(token, loaded.config);
   const manageUrl = repositories[0]
     ? githubManageInstallUrl(repositories[0].installationId)
     : `https://github.com/settings/installations`;
-  return {
+  return connectionStatus({
     configured: true,
     connected: repositories.length > 0,
-    pending: false,
     appSlug: loaded.config.githubAppSlug,
     installUrl: githubInstallUrl(loaded.config.githubAppSlug),
     manageUrl,
     repositoryCount: repositories.length,
     repositories,
-  };
+  });
 }
 
 export function buildInstallStart(userId: string, config: GithubAppConfig) {

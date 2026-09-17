@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { checkEnvironment, tryLoadAuthConfig, buildTrustedOrigins } from "../src/lib/github-app-config";
+import { checkEnvironment, tryLoadAuthConfig, tryLoadGithubAppConfig, buildTrustedOrigins } from "../src/lib/github-app-config";
 
 const dev = (): Record<string, string> => ({
   BETTER_AUTH_URL: "http://localhost:3000",
@@ -28,7 +28,14 @@ test("complete production shape passes without claiming live credentials work", 
   assert.match(result.limitation, /does not verify credentials/);
 });
 
-for (const key of Object.keys(dev())) {
+for (const key of [
+  "BETTER_AUTH_SECRET",
+  "DATABASE_URL",
+  "GITHUB_CLIENT_ID",
+  "GITHUB_CLIENT_SECRET",
+  "GITHUB_APP_ID",
+  "GITHUB_APP_SLUG",
+]) {
   test(`missing ${key} fails preflight`, () => {
     const env = dev();
     delete env[key];
@@ -36,12 +43,18 @@ for (const key of Object.keys(dev())) {
   });
 }
 
+test("one canonical origin is enough when the other is omitted", () => {
+  const env = dev();
+  delete env.NEXT_PUBLIC_BASE_URL;
+  assert.equal(checkEnvironment(env).ok, true);
+});
+
 for (const [key, value] of [
   ["BETTER_AUTH_SECRET", "short"],
   ["GITHUB_APP_ID", "client-not-app-id"],
   ["GITHUB_APP_ID", "0"],
   ["GITHUB_APP_ID", "99999999999999999999"],
-  ["GITHUB_APP_SLUG", "https://github.com/apps/test"],
+  ["GITHUB_APP_SLUG", "https://evil.example.invalid/apps/test"],
   ["GITHUB_CLIENT_SECRET", "YOUR_SECRET"],
   ["BETTER_AUTH_URL", "http://evil.example.invalid"],
   ["BETTER_AUTH_URL", "https://test.invalid/path"],
@@ -123,4 +136,14 @@ test("trusted origins include local host aliases used in development", () => {
   assert.ok(origins.includes("http://localhost:3000"));
   assert.ok(origins.includes("http://127.0.0.1:3000"));
   assert.ok(origins.includes("http://localhost:3001"));
+});
+
+test("GitHub App slug can be copied from the App URL", () => {
+  const env = dev();
+  env.GITHUB_APP_SLUG = "https://github.com/apps/starwall-radiumcoders";
+  const loaded = tryLoadGithubAppConfig(env, "development");
+  assert.equal(loaded.ok, true);
+  if (loaded.ok) {
+    assert.equal(loaded.config.githubAppSlug, "starwall-radiumcoders");
+  }
 });
