@@ -6,10 +6,13 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 function notConfigured() {
+  const message =
+    "GitHub sign-in is unavailable. The service owner needs to finish configuration.";
   return Response.json(
     {
-      error:
-        "GitHub connection is unavailable. The service owner needs to finish configuration.",
+      error: message,
+      message,
+      code: "NOT_CONFIGURED",
     },
     {
       status: 503,
@@ -29,10 +32,13 @@ function isBlockedPath(request: Request): boolean {
   return isBlockedAuthPath(new URL(request.url).pathname);
 }
 
-const auth = getAuth();
-const handler = auth ? toNextJsHandler(auth) : null;
+function getHandler() {
+  const auth = getAuth();
+  return auth ? toNextJsHandler(auth) : null;
+}
 
 export async function GET(request: Request) {
+  const handler = getHandler();
   if (!handler) return notConfigured();
   if (isBlockedPath(request)) return blocked();
   const response = await handler.GET(request);
@@ -41,6 +47,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const handler = getHandler();
   if (!handler) return notConfigured();
   if (isBlockedPath(request)) return blocked();
   const response = await handler.POST(request);

@@ -1,11 +1,15 @@
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { getAuthDatabase } from "@/lib/auth-db";
-import type { GithubAppConfig } from "@/lib/github-app-config";
+import {
+  buildTrustedOrigins,
+  type AuthRuntimeConfig,
+} from "@/lib/github-app-config";
 import {
   BLOCKED_TOKEN_PATHS,
   GITHUB_SOCIAL_PROVIDER,
 } from "@/lib/auth-paths";
+import { isForbiddenOAuthScope } from "@/lib/github-permissions";
 
 function rejectScopeEscalation(body: unknown) {
   if (!body || typeof body !== "object") return;
@@ -16,7 +20,8 @@ function rejectScopeEscalation(body: unknown) {
     : typeof scopes === "string"
       ? scopes.split(/[,\s]+/).filter(Boolean)
       : [];
-  if (list.length > 0) {
+  const allowed = new Set<string>(GITHUB_SOCIAL_PROVIDER.scope);
+  if (list.some((scope) => typeof scope === "string" && (isForbiddenOAuthScope(scope) || !allowed.has(scope)))) {
     throw new APIError("BAD_REQUEST", {
       message: "Additional GitHub OAuth scopes are not allowed.",
     });
@@ -24,7 +29,7 @@ function rejectScopeEscalation(body: unknown) {
 }
 
 export function createSharedAuthOptions(
-  config: GithubAppConfig,
+  config: AuthRuntimeConfig,
   plugins: Parameters<typeof betterAuth>[0]["plugins"] = [],
 ) {
   const database = getAuthDatabase();
@@ -36,7 +41,7 @@ export function createSharedAuthOptions(
     database,
     secret: config.betterAuthSecret,
     baseURL: config.canonicalOrigin,
-    trustedOrigins: [config.canonicalOrigin],
+    trustedOrigins: buildTrustedOrigins(config.canonicalOrigin),
     telemetry: { enabled: false },
     disabledPaths: [...BLOCKED_TOKEN_PATHS],
     socialProviders: {

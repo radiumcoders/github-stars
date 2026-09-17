@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { classifyGithubError } from "../src/lib/github-errors";
-import { GITHUB_SOCIAL_PROVIDER, isBlockedAuthPath } from "../src/lib/auth-paths";
+import { GITHUB_SOCIAL_PROVIDER, isBlockedAuthPath, githubProviderHasWriteScope } from "../src/lib/auth-paths";
+import { isForbiddenOAuthScope } from "../src/lib/github-permissions";
 import { createInstallState, verifyInstallState } from "../src/lib/github-install-state";
 import { resolveInputProps } from "../src/lib/video-props";
 import { defaultProps } from "../src/video/schema";
@@ -19,9 +20,16 @@ test("401 is reconnect, 429 is rate-limited, 403 without rate headers is forbidd
   );
 });
 
-test("GitHub provider requests no classic OAuth scopes", () => {
+test("GitHub provider requests identity scopes only", () => {
   assert.equal(GITHUB_SOCIAL_PROVIDER.disableDefaultScope, true);
-  assert.deepEqual(GITHUB_SOCIAL_PROVIDER.scope, []);
+  assert.deepEqual(GITHUB_SOCIAL_PROVIDER.scope, ["read:user", "user:email"]);
+  assert.equal(githubProviderHasWriteScope(), false);
+});
+
+test("identity OAuth scopes are not treated as write access", () => {
+  assert.equal(isForbiddenOAuthScope("read:user"), false);
+  assert.equal(isForbiddenOAuthScope("user:email"), false);
+  assert.equal(isForbiddenOAuthScope("repo"), true);
 });
 
 test("token-returning auth HTTP paths are blocked", () => {

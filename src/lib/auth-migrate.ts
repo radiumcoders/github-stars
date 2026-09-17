@@ -1,12 +1,12 @@
 import { betterAuth } from "better-auth";
 import { createSharedAuthOptions } from "@/lib/auth-options";
-import { tryLoadGithubAppConfig } from "@/lib/github-app-config";
+import { tryLoadAuthConfig } from "@/lib/github-app-config";
 
-const loaded = tryLoadGithubAppConfig();
+const loaded = tryLoadAuthConfig();
 
 if (!loaded.ok) {
   throw new Error(
-    "Set a valid GitHub App environment before running auth:migrate. Run pnpm run check:env.",
+    "Set a valid auth environment before running auth:migrate. Run pnpm run check:env.",
   );
 }
 

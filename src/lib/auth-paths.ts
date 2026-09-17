@@ -2,7 +2,7 @@ export const BLOCKED_TOKEN_PATHS = ["/get-access-token", "/refresh-token"] as co
 
 export const GITHUB_SOCIAL_PROVIDER = {
   disableDefaultScope: true,
-  scope: [] as string[],
+  scope: ["read:user", "user:email"] as const,
 };
 
 export function isBlockedAuthPath(pathname: string): boolean {

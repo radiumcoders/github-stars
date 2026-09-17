@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   // Single Remotion graph for the client Player (avoids dual-package hazards).
   transpilePackages: ["remotion", "@remotion/player", "@remotion/media-utils"],
   serverExternalPackages: [

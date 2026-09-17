@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { checkEnvironment } from "../src/lib/github-app-config";
+import { checkEnvironment, tryLoadAuthConfig, buildTrustedOrigins } from "../src/lib/github-app-config";
 
 const dev = (): Record<string, string> => ({
   BETTER_AUTH_URL: "http://localhost:3000",
@@ -47,7 +47,6 @@ for (const [key, value] of [
   ["BETTER_AUTH_URL", "https://test.invalid/path"],
   ["BETTER_AUTH_URL", "https://user:secret@test.invalid"],
   ["BETTER_AUTH_URL", "http://localhost:3000?token=secret"],
-  ["NEXT_PUBLIC_BASE_URL", "http://127.0.0.1:3000"],
   ["DATABASE_URL", "not a database URL"],
   ["DATABASE_URL", "postgresql://test:test@db.example.invalid/db?sslmode=disable"],
 ]) {
@@ -97,4 +96,31 @@ test("database TLS assurance is requested when missing from production shape", (
   const result = checkEnvironment(env, "production");
   assert.equal(result.ok, true);
   assert.match(result.warnings.join(" "), /enforces TLS/);
+});
+
+test("sign-in auth config does not require GitHub App ID or slug", () => {
+  const env = dev();
+  delete env.GITHUB_APP_ID;
+  delete env.GITHUB_APP_SLUG;
+  const loaded = tryLoadAuthConfig(env, "development");
+  assert.equal(loaded.ok, true);
+  assert.equal(checkEnvironment(env).ok, false);
+});
+
+test("localhost and 127.0.0.1 are equivalent development origins", () => {
+  const env = dev();
+  env.NEXT_PUBLIC_BASE_URL = "http://127.0.0.1:3000";
+  assert.equal(checkEnvironment(env).ok, true);
+  const loaded = tryLoadAuthConfig(env, "development");
+  assert.equal(loaded.ok, true);
+  if (loaded.ok) {
+    assert.equal(loaded.config.canonicalOrigin, "http://localhost:3000");
+  }
+});
+
+test("trusted origins include local host aliases used in development", () => {
+  const origins = buildTrustedOrigins("http://localhost:3000");
+  assert.ok(origins.includes("http://localhost:3000"));
+  assert.ok(origins.includes("http://127.0.0.1:3000"));
+  assert.ok(origins.includes("http://localhost:3001"));
 });

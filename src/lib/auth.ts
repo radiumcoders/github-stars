@@ -1,28 +1,31 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { createSharedAuthOptions } from "@/lib/auth-options";
-import { tryLoadGithubAppConfig } from "@/lib/github-app-config";
+import { tryLoadAuthConfig } from "@/lib/github-app-config";
 
 function createAuth() {
-  const loaded = tryLoadGithubAppConfig();
+  const loaded = tryLoadAuthConfig();
   if (!loaded.ok) return null;
   try {
     return betterAuth(createSharedAuthOptions(loaded.config, [nextCookies()]));
-  } catch {
+  } catch (error) {
+    console.error("[auth] Failed to initialize authentication.");
+    if (error instanceof Error && error.message && !/postgres|secret|token/i.test(error.message)) {
+      console.error("[auth]", error.name);
+    }
     return null;
   }
 }
 
 type AuthInstance = NonNullable<ReturnType<typeof createAuth>>;
 
-let cached: AuthInstance | null | undefined;
+let cached: AuthInstance | null = null;
 
 export function getAuth(): AuthInstance | null {
-  if (cached !== undefined) {
-    return cached;
-  }
-  cached = createAuth();
-  return cached;
+  if (cached) return cached;
+  const created = createAuth();
+  if (created) cached = created;
+  return created;
 }
 
 export type Session = AuthInstance["$Infer"]["Session"];
