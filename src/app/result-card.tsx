@@ -14,6 +14,7 @@ const presetShortLabels: Record<PresetId, string> = {
   confetti: "Confetti",
   editorial: "Editorial",
   aurora: "Aurora",
+  "stack-burst": "Stack & Burst",
 };
 
 export function ResultCard({

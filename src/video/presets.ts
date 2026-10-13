@@ -2,7 +2,7 @@
 // server components and anything that must not evaluate Remotion during SSR.
 // The preset id → component mapping lives in composition.tsx.
 
-export const presetIds = ['generic', 'confetti', 'editorial', 'aurora'] as const
+export const presetIds = ['generic', 'confetti', 'editorial', 'aurora', 'stack-burst'] as const
 
 export type PresetId = (typeof presetIds)[number]
 
@@ -37,6 +37,11 @@ export const presets: { id: PresetId; label: string; colors: PresetColors }[] =
       id: 'aurora',
       label: 'Aurora Glass',
       colors: { primary: '#0b1120', shader: '#7c3aed', text: '#ffffff' },
+    },
+    {
+      id: 'stack-burst',
+      label: 'Stack & Burst',
+      colors: { primary: '#fffdf7', shader: '#fde68a', text: '#18181b' },
     },
   ]
 

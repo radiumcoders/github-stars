@@ -3,6 +3,7 @@ import { AuroraPreset } from './preset-aurora'
 import { ConfettiPreset } from './preset-confetti'
 import { EditorialPreset } from './preset-editorial'
 import { GenericPreset } from './preset-generic'
+import { StackBurstPreset } from './preset-stack-burst'
 import { PresetId, defaultPreset } from './presets'
 import { Props } from './schema'
 
@@ -13,6 +14,7 @@ const presetComponents: Record<PresetId, ComponentType<Props>> = {
   confetti: ConfettiPreset,
   editorial: EditorialPreset,
   aurora: AuroraPreset,
+  'stack-burst': StackBurstPreset,
 }
 
 export function GitHubStarsComposition(props: Props) {
