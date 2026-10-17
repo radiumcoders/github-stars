@@ -1,6 +1,10 @@
 "use server";
 
 import { getGithubOAuthToken } from "@/lib/github-access-token";
+import {
+  getGithubRepositories,
+  type GithubRepositoriesResult,
+} from "@/lib/github-repositories";
 import { getGithubStarsInfo, type GithubStarsResult } from "@/lib/github-stars-info";
 
 export async function fetchGithubStars(repository: string): Promise<GithubStarsResult> {
@@ -14,4 +18,16 @@ export async function fetchGithubStars(repository: string): Promise<GithubStarsR
     };
   }
   return getGithubStarsInfo(repository, token);
+}
+
+export async function fetchGithubRepositories(): Promise<GithubRepositoriesResult> {
+  const token = await getGithubOAuthToken();
+  if (!token) {
+    return {
+      ok: false,
+      message:
+        "We couldn't read your GitHub token. Sign out and sign in again.",
+    };
+  }
+  return getGithubRepositories(token);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { RepositoryPicker } from "@/app/repository-picker";
 import { authClient } from "@/lib/auth-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +12,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowRight, LogOut, TriangleAlert } from "lucide-react";
@@ -199,8 +199,8 @@ export function RepositoryForm({
                   <AlertTitle>Private repos too</AlertTitle>
                   <AlertDescription>
                     GitHub will also ask for access to private repositories. We
-                    only read stargazers for the repo you enter — we don&apos;t
-                    clone, change, or otherwise use them. You can always{" "}
+                    list your repositories and read stargazers for the one you
+                    pick — we don&apos;t clone, change, or otherwise use them. You can always{" "}
                     <a
                       href="https://github.com/radiumcoders/github-stars"
                       target="_blank"
@@ -237,19 +237,10 @@ export function RepositoryForm({
 
           <Field>
             <FieldLabel htmlFor="repository">Repository</FieldLabel>
-            <Input
-              id="repository"
-              name="repository"
-              placeholder="owner/repo"
-              className="font-mono"
-              autoCapitalize="off"
-              autoComplete="off"
-              autoCorrect="off"
-              enterKeyHint="go"
-              required
-              disabled={!isAuthenticated || isPending}
+            <RepositoryPicker
               value={repository}
-              onChange={(event) => setRepository(event.target.value)}
+              onChange={setRepository}
+              disabled={!isAuthenticated || isPending}
             />
           </Field>
         </FieldGroup>
