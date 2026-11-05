@@ -3,6 +3,10 @@ import { AuroraPreset } from './preset-aurora'
 import { ConfettiPreset } from './preset-confetti'
 import { EditorialPreset } from './preset-editorial'
 import { GenericPreset } from './preset-generic'
+import { HistoryPreset } from './preset-history'
+import { MarqueePreset } from './preset-marquee'
+import { MosaicPreset } from './preset-mosaic'
+import { OrbitPreset } from './preset-orbit'
 import { StackBurstPreset } from './preset-stack-burst'
 import { PresetId, defaultPreset } from './presets'
 import { Props } from './schema'
@@ -15,6 +19,10 @@ const presetComponents: Record<PresetId, ComponentType<Props>> = {
   editorial: EditorialPreset,
   aurora: AuroraPreset,
   'stack-burst': StackBurstPreset,
+  history: HistoryPreset,
+  marquee: MarqueePreset,
+  mosaic: MosaicPreset,
+  orbit: OrbitPreset,
 }
 
 export function GitHubStarsComposition(props: Props) {

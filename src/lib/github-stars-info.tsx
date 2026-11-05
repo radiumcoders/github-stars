@@ -108,10 +108,14 @@ export async function getGithubStarsInfo(
         .filter(([, , rel]) => rel === "last")
         .map(([, page]) => Number(page))[0] ?? 1) - 1;
 
-    const stargazers = [
-      ...(lastPage > 1 ? await getStargazers(lastPage - 1) : []),
-      ...(await getStargazers(lastPage)),
-    ].slice(-50);
+    const [recent, starHistory] = await Promise.all([
+      Promise.all([
+        lastPage > 1 ? getStargazers(lastPage - 1) : Promise.resolve([]),
+        getStargazers(lastPage),
+      ]),
+      getStarHistory(lastPage + 1, stars),
+    ]);
+    const stargazers = recent.flat().slice(-50);
 
     return {
       ok: true,
@@ -123,6 +127,7 @@ export async function getGithubStarsInfo(
         stargazers: stargazers
           .map((sg) => sg.user?.avatar_url ?? null)
           .filter(Boolean) as string[],
+        starHistory,
       },
     };
   } catch (err) {
@@ -140,5 +145,42 @@ export async function getGithubStarsInfo(
       },
     });
     return data as { user: { avatar_url: string }; starred_at: string }[];
+  }
+
+  // Samples the first star on evenly spaced pages to plot growth over time
+  // as [timestamp, cumulative stars] pairs. GitHub only serves the first
+  // 400 pages of stargazers, so very large repos are sampled up to that
+  // point and then joined to today's total. History is decorative, so any
+  // failure just yields an empty list.
+  async function getStarHistory(
+    totalPages: number,
+    stars: number,
+  ): Promise<[number, number][]> {
+    try {
+      const reachable = Math.max(1, Math.min(totalPages, 400));
+      const samples = Math.min(reachable, 10);
+      const pages = [
+        ...new Set(
+          Array.from({ length: samples }, (_, i) =>
+            samples === 1
+              ? 1
+              : Math.round(1 + (i * (reachable - 1)) / (samples - 1)),
+          ),
+        ),
+      ];
+      const points = await Promise.all(
+        pages.map(async (page): Promise<[number, number] | null> => {
+          const [first] = await getStargazers(page);
+          if (!first?.starred_at) return null;
+          return [Date.parse(first.starred_at), (page - 1) * 100 + 1];
+        }),
+      );
+      const history = points.filter((p): p is [number, number] => p !== null);
+      if (history.length === 0) return [];
+      history.push([Date.now(), Math.max(stars, history.at(-1)![1])]);
+      return history;
+    } catch {
+      return [];
+    }
   }
 }

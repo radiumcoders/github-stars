@@ -15,6 +15,10 @@ const presetShortLabels: Record<PresetId, string> = {
   editorial: "Editorial",
   aurora: "Aurora",
   "stack-burst": "Stack & Burst",
+  history: "History",
+  marquee: "Marquee",
+  mosaic: "Mosaic",
+  orbit: "Orbit",
 };
 
 export function ResultCard({

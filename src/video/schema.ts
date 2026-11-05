@@ -14,6 +14,8 @@ export const schema = z.object({
   repository: z.string(),
   stars: z.number(),
   stargazers: z.array(z.string()),
+  // [timestamp ms, cumulative stars], oldest first. Empty when unknown.
+  starHistory: z.array(z.tuple([z.number(), z.number()])).default([]),
   preset: z.enum(presetIds).default(defaultPreset),
   primaryColor: z.string().default(defaultPrimaryColor),
   shaderColor: z.string().default(defaultShaderColor),
@@ -32,4 +34,5 @@ export const defaultProps: Props = {
   repository: 'book-pr',
   stars: 143,
   stargazers: bookPrStargazers.slice(0, 50).map((sg) => sg.avatar_url),
+  starHistory: [],
 }
