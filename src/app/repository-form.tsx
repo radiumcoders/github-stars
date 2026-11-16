@@ -2,6 +2,7 @@
 
 import { RepositoryPicker } from "@/app/repository-picker";
 import { authClient } from "@/lib/auth-client";
+import { parseRepository } from "@/lib/parse-repository";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export function RepositoryForm({
   const [signingIn, setSigningIn] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [repositoryError, setRepositoryError] = useState<string | null>(null);
 
   const isAuthenticated = Boolean(session?.user);
 
@@ -124,10 +126,14 @@ export function RepositoryForm({
       className="flex flex-col"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!isAuthenticated) return;
-        const cleanRepository = repository
-          .trim()
-          .replace(/^(https?:\/\/)?github.com\//, "");
+        const cleanRepository = parseRepository(repository);
+        if (!cleanRepository) {
+          setRepositoryError(
+            "Paste a GitHub repository link or type owner/repo.",
+          );
+          return;
+        }
+        setRepositoryError(null);
         setRepository(cleanRepository);
         onSubmit(cleanRepository);
       }}
@@ -135,14 +141,34 @@ export function RepositoryForm({
       <div className="flex flex-col gap-1 px-4 py-4">
         <h2 className="text-sm font-medium">Project</h2>
         <p className="text-sm text-muted-foreground">
-          Sign in and choose a repository to preview.
+          Paste any public GitHub repository link to preview it.
         </p>
       </div>
       <Separator />
       <div className="px-4 py-4">
         <FieldGroup className="gap-4">
+          <Field data-invalid={Boolean(repositoryError) || undefined}>
+            <FieldLabel htmlFor="repository">Repository</FieldLabel>
+            <RepositoryPicker
+              value={repository}
+              onChange={(next) => {
+                setRepository(next);
+                setRepositoryError(null);
+              }}
+              canList={isAuthenticated}
+            />
+            {repositoryError ? (
+              <FieldError>{repositoryError}</FieldError>
+            ) : null}
+          </Field>
+
           <Field data-invalid={Boolean(authError) || undefined}>
-            <FieldLabel>GitHub account</FieldLabel>
+            <FieldLabel>
+              GitHub account
+              <span className="font-normal text-muted-foreground">
+                optional
+              </span>
+            </FieldLabel>
             {isPending ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Spinner className="size-3.5" />
@@ -191,8 +217,8 @@ export function RepositoryForm({
             ) : (
               <>
                 <FieldDescription>
-                  Use GitHub so we can fetch stargazers for repositories you can
-                  access.
+                  Public repositories work without signing in. Sign in only to
+                  use your private repositories or pick from a list.
                 </FieldDescription>
                 <Alert>
                   <TriangleAlert />
@@ -234,21 +260,12 @@ export function RepositoryForm({
             )}
             {authError ? <FieldError>{authError}</FieldError> : null}
           </Field>
-
-          <Field>
-            <FieldLabel htmlFor="repository">Repository</FieldLabel>
-            <RepositoryPicker
-              value={repository}
-              onChange={setRepository}
-              disabled={!isAuthenticated || isPending}
-            />
-          </Field>
         </FieldGroup>
       </div>
       <div className="px-4 pb-4">
         <Button
           type="submit"
-          disabled={loading || !isAuthenticated || isPending}
+          disabled={loading}
           className="w-full"
         >
           {loading ? (

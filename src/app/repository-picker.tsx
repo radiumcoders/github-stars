@@ -19,10 +19,13 @@ export function RepositoryPicker({
   value,
   onChange,
   disabled,
+  canList,
 }: {
   value: string;
   onChange: (repository: string) => void;
   disabled?: boolean;
+  /** Signed in: load the user's repositories to pick from. */
+  canList: boolean;
 }) {
   const [groups, setGroups] = useState<GithubRepositoryGroup[] | null>(null);
   // True from the start: the list is requested as soon as the user is signed in.
@@ -57,10 +60,10 @@ export function RepositoryPicker({
   }
 
   useEffect(() => {
-    if (disabled || requested.current) return;
+    if (!canList || requested.current) return;
     requested.current = true;
     void request();
-  }, [disabled, request]);
+  }, [canList, request]);
 
   const normalized = value.trim().toLowerCase();
   const allRepositories = useMemo(
@@ -122,7 +125,9 @@ export function RepositoryPicker({
         <Input
           id="repository"
           name="repository"
-          placeholder={groups ? "Search or type owner/repo" : "owner/repo"}
+          placeholder={
+            groups ? "Search, or paste a GitHub link" : "github.com/owner/repo"
+          }
           className="font-mono"
           autoCapitalize="off"
           autoComplete="off"
@@ -153,7 +158,7 @@ export function RepositoryPicker({
         ) : null}
       </div>
 
-      {disabled ? null : loading && !groups ? (
+      {!canList ? null : loading && !groups ? (
         <div className="flex items-center gap-2 rounded-sm border border-border px-3 py-3 text-sm text-muted-foreground">
           <Spinner className="size-3.5" />
           Loading your repositories

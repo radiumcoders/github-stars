@@ -190,8 +190,8 @@ export function StarsViewer({
               <Alert variant="destructive" className="max-w-md">
                 <AlertCircle />
                 <AlertTitle>
-                  {result.code === "missing_token"
-                    ? "GitHub authorization required"
+                  {result.code === "rate_limited"
+                    ? "GitHub rate limit reached"
                     : result.code === "forbidden"
                       ? "Access denied"
                       : "Could not load repository"}
@@ -230,7 +230,7 @@ export function StarsViewer({
                 </EmptyMedia>
                 <EmptyTitle>No preview yet</EmptyTitle>
                 <EmptyDescription>
-                  Sign in and generate a repository to fill this stage.
+                  Paste a GitHub repository link and press Generate to fill this stage.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
