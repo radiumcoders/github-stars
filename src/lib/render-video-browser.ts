@@ -60,6 +60,7 @@ export async function renderVideoInBrowser(
   await assertBrowserExportSupported();
 
   const props: Props = { ...defaultProps, ...inputProps };
+  const blankFrames = createBlankFrameDetector();
 
   const { getBlob } = await renderMediaOnWeb({
     composition: {
@@ -76,14 +77,67 @@ export async function renderVideoInBrowser(
     videoCodec: "h264",
     // Composition has no audio track.
     muted: true,
-    // Tailwind / layout-heavy UI — full screenshot path is more reliable than CSS emulation.
-    allowHtmlInCanvas: true,
+    // Keep this off. It opts into Chromium's experimental HTML-in-canvas
+    // capture (drawElementImage), which takes over as soon as a browser exposes
+    // the API and can hand back empty frames without throwing — the MP4 then
+    // encodes as solid black. The built-in DOM composer renders every preset.
+    allowHtmlInCanvas: false,
     pageResponsiveness: "medium",
+    onFrame: blankFrames.inspect,
     onProgress: options?.onProgress,
     signal: options?.signal,
   });
 
+  if (blankFrames.allBlank()) {
+    throw new Error(
+      "The export came out empty, so nothing was downloaded. Reload the page and try again, or use the latest Chrome.",
+    );
+  }
+
   return getBlob();
+}
+
+// How often a rendered frame is checked, and the size it is checked at.
+const BLANK_CHECK_EVERY_N_FRAMES = 30;
+const BLANK_CHECK_SIZE = 16;
+
+/**
+ * Watches rendered frames for the "nothing was captured" failure, where every
+ * pixel is fully transparent (H.264 has no alpha, so that plays back as black).
+ * Every preset paints an opaque background, so a real frame always has alpha.
+ */
+function createBlankFrameDetector() {
+  const canvas = new OffscreenCanvas(BLANK_CHECK_SIZE, BLANK_CHECK_SIZE);
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  let seen = 0;
+  let checked = 0;
+  let blank = 0;
+
+  return {
+    inspect(frame: VideoFrame): VideoFrame {
+      if (ctx && seen++ % BLANK_CHECK_EVERY_N_FRAMES === 0) {
+        ctx.clearRect(0, 0, BLANK_CHECK_SIZE, BLANK_CHECK_SIZE);
+        ctx.drawImage(frame, 0, 0, BLANK_CHECK_SIZE, BLANK_CHECK_SIZE);
+        const { data } = ctx.getImageData(
+          0,
+          0,
+          BLANK_CHECK_SIZE,
+          BLANK_CHECK_SIZE,
+        );
+        let hasPixels = false;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] !== 0) {
+            hasPixels = true;
+            break;
+          }
+        }
+        checked++;
+        if (!hasPixels) blank++;
+      }
+      return frame;
+    },
+    allBlank: () => checked > 0 && blank === checked,
+  };
 }
 
 export function downloadBlob(blob: Blob, filename: string) {

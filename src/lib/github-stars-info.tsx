@@ -1,8 +1,8 @@
+import { parseRepository } from "@/lib/parse-repository";
 import { Props } from "@/video/schema";
 import { Octokit } from "@octokit/rest";
 
 export type GithubStarsErrorCode =
-  | "missing_token"
   | "not_found"
   | "forbidden"
   | "rate_limited"
@@ -12,9 +12,10 @@ export type GithubStarsResult =
   | { ok: true; data: Partial<Props> }
   | { ok: false; code: GithubStarsErrorCode; message: string };
 
-function createOctokit(token: string) {
+function createOctokit(token: string | null) {
   return new Octokit({
-    auth: token,
+    // No token means anonymous access: public repositories only.
+    auth: token ?? undefined,
     request: {
       fetch: (input: RequestInfo | URL, init?: RequestInit) =>
         fetch(input, { ...init, next: { revalidate: 0 } }),
@@ -22,29 +23,45 @@ function createOctokit(token: string) {
   });
 }
 
-function mapError(err: unknown): GithubStarsResult {
+function isRateLimited(err: { status: number }) {
+  if (err.status === 429) return true;
+  if (err.status !== 403) return false;
+  const response = (err as { response?: { headers?: Record<string, string> } })
+    .response;
+  return (
+    response?.headers?.["x-ratelimit-remaining"] === "0" ||
+    /rate limit/i.test((err as { message?: string }).message ?? "")
+  );
+}
+
+function mapError(err: unknown, signedIn: boolean): GithubStarsResult {
   if (err && typeof err === "object" && "status" in err) {
-    const status = (err as { status: number }).status;
-    if (status === 401 || status === 403) {
-      return {
-        ok: false,
-        code: "forbidden",
-        message:
-          "Access denied. Your GitHub OAuth authorization may not have access to this repository — try signing in again or use a repo you own or collaborate on.",
-      };
-    }
-    if (status === 404) {
-      return {
-        ok: false,
-        code: "not_found",
-        message: "Repository not found or your token cannot access it.",
-      };
-    }
-    if (status === 429) {
+    const error = err as { status: number };
+    if (isRateLimited(error)) {
       return {
         ok: false,
         code: "rate_limited",
-        message: "GitHub rate limit exceeded. Try again later.",
+        message: signedIn
+          ? "GitHub rate limit exceeded. Try again later."
+          : "GitHub's hourly limit for requests without an account was reached. Try again later, or sign in with GitHub for a much higher limit.",
+      };
+    }
+    if (error.status === 401 || error.status === 403) {
+      return {
+        ok: false,
+        code: "forbidden",
+        message: signedIn
+          ? "Access denied. Your GitHub authorization may not have access to this repository. Try signing in again or use a repo you own or collaborate on."
+          : "GitHub denied access to this repository. If it is private, sign in with GitHub first.",
+      };
+    }
+    if (error.status === 404) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: signedIn
+          ? "Repository not found, or your GitHub account cannot access it."
+          : "Repository not found. Check the link, or sign in with GitHub if it is private.",
       };
     }
   }
@@ -52,34 +69,41 @@ function mapError(err: unknown): GithubStarsResult {
   return {
     ok: false,
     code: "unknown",
-    message: "Failed to fetch repository data. Check your token and repository name.",
+    message: "Failed to fetch repository data. Check the repository and try again.",
   };
 }
 
+/**
+ * `token` is the signed-in user's GitHub token (or the server's fallback
+ * token). Without one the request is anonymous: GitHub then refuses to list
+ * stargazers, so recent ones are read from the repository's public star events.
+ */
 export async function getGithubStarsInfo(
   repository: string,
-  token: string,
+  token: string | null,
 ): Promise<GithubStarsResult> {
-  const trimmedToken = token.trim();
-  if (!trimmedToken) {
-    return {
-      ok: false,
-      code: "missing_token",
-      message:
-        "GitHub authorization is required. Sign in with GitHub to grant access before fetching stargazers.",
-    };
-  }
+  const trimmedToken = token?.trim() || null;
+  const signedIn = Boolean(trimmedToken);
 
-  const [user, repo] = repository.split("/");
+  const [user, repo] = parseRepository(repository)?.split("/") ?? [];
   if (!user || !repo) {
     return {
       ok: false,
       code: "not_found",
-      message: "Enter a valid owner/repo (e.g. vercel/next.js).",
+      message:
+        "Enter a GitHub repository link or owner/repo (e.g. vercel/next.js).",
     };
   }
 
   const octokit = createOctokit(trimmedToken);
+
+  if (!signedIn) {
+    try {
+      return await getPublicStarsInfo(octokit, user, repo);
+    } catch (err) {
+      return mapError(err, false);
+    }
+  }
 
   try {
     const {
@@ -131,7 +155,7 @@ export async function getGithubStarsInfo(
       },
     };
   } catch (err) {
-    return mapError(err);
+    return mapError(err, signedIn);
   }
 
   async function getStargazers(page: number) {
@@ -183,4 +207,75 @@ export async function getGithubStarsInfo(
       return [];
     }
   }
+}
+
+// GitHub keeps roughly the last 300 events per repository, 100 per page.
+const EVENT_PAGES = 3;
+const HISTORY_SAMPLES = 10;
+
+/**
+ * Anonymous variant for public repositories. The stargazers list needs
+ * authentication, but "WatchEvent" (someone starred the repo) is in the public
+ * event feed, which gives the most recent stargazers and when they starred.
+ * Costs at most five requests against the 60/hour anonymous limit.
+ */
+async function getPublicStarsInfo(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+): Promise<GithubStarsResult> {
+  const [{ data: ownerData }, { data: repoData }] = await Promise.all([
+    octokit.users.getByUsername({ username: owner }),
+    octokit.repos.get({ owner, repo }),
+  ]);
+  const stars = repoData.stargazers_count;
+
+  // Newest first. The feed is decorative, so a failed page is just skipped.
+  const pages = await Promise.all(
+    Array.from({ length: EVENT_PAGES }, (_, i) =>
+      octokit.activity
+        .listRepoEvents({ owner, repo, per_page: 100, page: i + 1 })
+        .then((res) => res.data)
+        .catch(() => []),
+    ),
+  );
+
+  const seen = new Set<string>();
+  const starEvents: { avatarUrl: string; at: number }[] = [];
+  for (const event of pages.flat()) {
+    if (event.type !== "WatchEvent" || !event.created_at) continue;
+    const login = event.actor.login;
+    if (seen.has(login)) continue;
+    seen.add(login);
+    starEvents.push({
+      avatarUrl: event.actor.avatar_url,
+      at: Date.parse(event.created_at),
+    });
+  }
+  // Oldest first, matching the authenticated path.
+  starEvents.reverse();
+
+  const starHistory: [number, number][] = [];
+  if (starEvents.length > 0) {
+    const created = repoData.created_at ? Date.parse(repoData.created_at) : NaN;
+    if (!Number.isNaN(created)) starHistory.push([created, 0]);
+    const before = Math.max(0, stars - starEvents.length);
+    const step = Math.max(1, Math.floor(starEvents.length / HISTORY_SAMPLES));
+    for (let i = 0; i < starEvents.length; i += step) {
+      starHistory.push([starEvents[i].at, before + i + 1]);
+    }
+    starHistory.push([Date.now(), stars]);
+  }
+
+  return {
+    ok: true,
+    data: {
+      user: repoData.owner.login,
+      userAvatarUrl: ownerData.avatar_url,
+      repository: repoData.name,
+      stars,
+      stargazers: starEvents.slice(-50).map((event) => event.avatarUrl),
+      starHistory,
+    },
+  };
 }
