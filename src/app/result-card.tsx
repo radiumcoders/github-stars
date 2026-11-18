@@ -19,6 +19,7 @@ const presetShortLabels: Record<PresetId, string> = {
   marquee: "Marquee",
   mosaic: "Mosaic",
   orbit: "Orbit",
+  milestone: "Milestone",
 };
 
 export function ResultCard({

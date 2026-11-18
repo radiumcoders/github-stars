@@ -5,6 +5,7 @@ import { EditorialPreset } from './preset-editorial'
 import { GenericPreset } from './preset-generic'
 import { HistoryPreset } from './preset-history'
 import { MarqueePreset } from './preset-marquee'
+import { MilestonePreset } from './preset-milestone'
 import { MosaicPreset } from './preset-mosaic'
 import { OrbitPreset } from './preset-orbit'
 import { StackBurstPreset } from './preset-stack-burst'
@@ -23,6 +24,7 @@ const presetComponents: Record<PresetId, ComponentType<Props>> = {
   marquee: MarqueePreset,
   mosaic: MosaicPreset,
   orbit: OrbitPreset,
+  milestone: MilestonePreset,
 }
 
 export function GitHubStarsComposition(props: Props) {
