@@ -12,6 +12,7 @@ export const presetIds = [
   'marquee',
   'mosaic',
   'orbit',
+  'milestone',
 ] as const
 
 export type PresetId = (typeof presetIds)[number]
@@ -72,6 +73,11 @@ export const presets: { id: PresetId; label: string; colors: PresetColors }[] =
       id: 'orbit',
       label: 'Orbit',
       colors: { primary: '#ffffff', shader: '#dbeafe', text: '#0f172a' },
+    },
+    {
+      id: 'milestone',
+      label: 'Milestone',
+      colors: { primary: '#141414', shader: '#ff5a1f', text: '#ffffff' },
     },
   ]
 
